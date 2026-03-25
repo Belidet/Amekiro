@@ -1,3 +1,70 @@
+// Debug endpoint to check database status (no auth required for testing)
+app.get('/api/debug/db-status', (req, res) => {
+  try {
+    const users = db.get('users').value();
+    const dailyTasks = db.get('tasks.daily').value();
+    
+    res.json({
+      databaseExists: true,
+      userCount: users?.length || 0,
+      users: users?.map(u => ({ 
+        username: u.username, 
+        role: u.role, 
+        isActive: u.isActive 
+      })) || [],
+      dailyTasksCount: dailyTasks?.length || 0,
+      dbPath: '/tmp/db.json',
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    res.status(500).json({ 
+      error: error.message,
+      databaseExists: false 
+    });
+  }
+});
+
+// Debug endpoint to manually create admin if missing
+app.get('/api/debug/create-admin', async (req, res) => {
+  try {
+    const users = db.get('users').value();
+    
+    if (!users || users.length === 0) {
+      const defaultPassword = await bcrypt.hash('admin123', 10);
+      db.get('users')
+        .push({
+          id: 'root_admin_default',
+          username: 'admin',
+          passwordHash: defaultPassword,
+          role: 'root_admin',
+          fullName: 'መጀመሪያ አስተዳዳሪ',
+          email: '',
+          createdAt: new Date().toISOString(),
+          createdByUserId: 'system',
+          lastLogin: null,
+          isActive: true,
+          notes: 'Default root admin - please change password',
+          rootAdminBadge: 'Founder'
+        })
+        .write();
+      
+      res.json({ 
+        success: true, 
+        message: 'Admin user created successfully',
+        username: 'admin',
+        password: 'admin123'
+      });
+    } else {
+      res.json({ 
+        success: false, 
+        message: 'Users already exist',
+        userCount: users.length 
+      });
+    }
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
 const express = require('express');
 const cors = require('cors');
 const bcrypt = require('bcryptjs');
