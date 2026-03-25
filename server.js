@@ -1,3 +1,13 @@
+// Add at the very top of server.js
+const path = require('path');
+const fs = require('fs');
+
+// Ensure db.json exists in a writable location for Vercel
+const DB_PATH = process.env.VERCEL ? '/tmp/db.json' : path.join(__dirname, 'db.json');
+
+// If using lowdb, update the adapter path
+// In your db initialization, use:
+const adapter = new FileSync(DB_PATH);
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
