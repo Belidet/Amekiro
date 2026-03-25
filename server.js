@@ -1,18 +1,10 @@
 // Add at the very top of server.js
 const path = require('path');
 const fs = require('fs');
-
-// Ensure db.json exists in a writable location for Vercel
-const DB_PATH = process.env.VERCEL ? '/tmp/db.json' : path.join(__dirname, 'db.json');
-
-// If using lowdb, update the adapter path
-// In your db initialization, use:
-const adapter = new FileSync(DB_PATH);
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
-const path = require('path');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { body, validationResult } = require('express-validator');
@@ -20,13 +12,30 @@ const { v4: uuidv4 } = require('uuid');
 const low = require('lowdb');
 const FileSync = require('lowdb/adapters/FileSync');
 
-// Initialize database
-const adapter = new FileSync('db.json');
+// Ensure db.json exists in a writable location
+// For Vercel, use /tmp, for local development use current directory
+const DB_PATH = process.env.VERCEL ? '/tmp/db.json' : path.join(__dirname, 'db.json');
+
+// Initialize database with the correct path
+const adapter = new FileSync(DB_PATH);
 const db = low(adapter);
 
-// Initialize database with default structure
-const initDb = require('./db/init');
-initDb(db);
+// Initialize database with default structure (with error handling)
+try {
+  // Check if db.json exists and has required structure
+  const initDb = require('./db/init');
+  initDb(db);
+} catch (error) {
+  console.error('Error initializing database:', error.message);
+  // Fallback initialization if init.js is missing
+  db.defaults({
+    users: [],
+    tasks: [],
+    completions: [],
+    auditLogs: [],
+    inspirations: []
+  }).write();
+}
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -79,33 +88,61 @@ const requireRole = (...roles) => {
   };
 };
 
-// Import routes
-const authRoutes = require('./routes/auth')(db, bcrypt, jwt, JWT_SECRET, SALT_ROUNDS);
-const userRoutes = require('./routes/users')(db, bcrypt, uuidv4, authenticateToken, requireRole);
-const taskRoutes = require('./routes/tasks')(db, uuidv4, authenticateToken, requireRole);
-const completionRoutes = require('./routes/completions')(db, uuidv4, authenticateToken, requireRole);
-const analyticsRoutes = require('./routes/analytics')(db, authenticateToken, requireRole);
-const auditRoutes = require('./routes/audit')(db, authenticateToken, requireRole);
+// Import routes with error handling
+let authRoutes, userRoutes, taskRoutes, completionRoutes, analyticsRoutes, auditRoutes;
 
-// Use routes
-app.use('/api/auth', authRoutes);
-app.use('/api/users', userRoutes);
-app.use('/api/tasks', taskRoutes);
-app.use('/api/completions', completionRoutes);
-app.use('/api/analytics', analyticsRoutes);
-app.use('/api/audit', auditRoutes);
+try {
+  authRoutes = require('./routes/auth')(db, bcrypt, jwt, JWT_SECRET, SALT_ROUNDS);
+  userRoutes = require('./routes/users')(db, bcrypt, uuidv4, authenticateToken, requireRole);
+  taskRoutes = require('./routes/tasks')(db, uuidv4, authenticateToken, requireRole);
+  completionRoutes = require('./routes/completions')(db, uuidv4, authenticateToken, requireRole);
+  analyticsRoutes = require('./routes/analytics')(db, authenticateToken, requireRole);
+  auditRoutes = require('./routes/audit')(db, authenticateToken, requireRole);
+} catch (error) {
+  console.error('Error loading routes:', error.message);
+  // Fallback route if route files are missing
+  app.get('/api/*', (req, res) => {
+    res.status(500).json({ error: 'API routes not properly configured' });
+  });
+}
+
+// Use routes if they exist
+if (authRoutes) app.use('/api/auth', authRoutes);
+if (userRoutes) app.use('/api/users', userRoutes);
+if (taskRoutes) app.use('/api/tasks', taskRoutes);
+if (completionRoutes) app.use('/api/completions', completionRoutes);
+if (analyticsRoutes) app.use('/api/analytics', analyticsRoutes);
+if (auditRoutes) app.use('/api/audit', auditRoutes);
+
+// Health check endpoint (useful for debugging)
+app.get('/api/health', (req, res) => {
+  res.json({ 
+    status: 'ok', 
+    timestamp: new Date().toISOString(),
+    dbPath: DB_PATH,
+    dbSize: fs.existsSync(DB_PATH) ? fs.statSync(DB_PATH).size : 0
+  });
+});
 
 // Serve index.html for all other routes (SPA)
 app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+  res.sendFile(path.join(__dirname, 'public', 'index.html'), (err) => {
+    if (err) {
+      console.error('Error serving index.html:', err);
+      res.status(500).send('Error loading application');
+    }
+  });
 });
 
 // Error handling middleware
 app.use((err, req, res, next) => {
-  console.error(err.stack);
+  console.error('Server error:', err.stack);
   res.status(500).json({ error: 'Something went wrong on the server.' });
 });
 
+// Start server
 app.listen(PORT, () => {
   console.log(`✠ የአመክሮ ቤተሰብ መከታተያ running on port ${PORT} ✠`);
+  console.log(`📁 Database path: ${DB_PATH}`);
+  console.log(`📁 Static files: ${path.join(__dirname, 'public')}`);
 });
