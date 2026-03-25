@@ -5,43 +5,10 @@
       "maxDuration": 10
     }
   },
-  "builds": [
+  "rewrites": [
     {
-      "src": "api/*.js",
-      "use": "@vercel/node"
-    },
-    {
-      "src": "public/**",
-      "use": "@vercel/static"
+      "source": "/api/(.*)",
+      "destination": "/api/index.js"
     }
-  ],
-  "routes": [
-    {
-      "src": "/api/auth/login",
-      "dest": "/api/login.js"
-    },
-    {
-      "src": "/api/auth/me",
-      "dest": "/api/auth-me.js"
-    },
-    {
-      "src": "/api/tasks/daily",
-      "dest": "/api/tasks-daily.js"
-    },
-    {
-      "src": "/api/completions",
-      "dest": "/api/completions.js"
-    },
-    {
-      "src": "/api/inspiration/random",
-      "dest": "/api/inspiration.js"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/public/$1"
-    }
-  ],
-  "env": {
-    "JWT_SECRET": "your-secure-secret-key-change-this"
-  }
+  ]
 }
