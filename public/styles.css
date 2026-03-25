@@ -1,1 +1,751 @@
+/* ============================================
+   የአመክሮ ቤተሰብ መከታተያ
+   Eastern Orthodox & Coptic Orthodox Sacred Design
+   ============================================ */
 
+/* Root Variables */
+:root {
+  --gold-primary: #C9A03D;
+  --gold-dark: #B8860B;
+  --gold-light: #F0E68C;
+  --burgundy: #800020;
+  --burgundy-dark: #660000;
+  --deep-blue: #1A2A3A;
+  --deep-blue-dark: #0F1A24;
+  --ivory: #FFFFF0;
+  --parchment: #FDF5E6;
+  --liturgical-red: #C41E3A;
+  --liturgical-green: #2E5A2E;
+  --royal-blue: #2E5090;
+  --purple: #4B0082;
+  --text-dark: #2C2C2C;
+  --text-light: #F5F5DC;
+  --shadow-gold: 0 4px 15px rgba(201, 160, 61, 0.3);
+  --shadow-sacred: 0 8px 32px rgba(0, 0, 0, 0.2);
+  --border-gold: 2px solid var(--gold-primary);
+  --border-burgundy: 2px solid var(--burgundy);
+}
+
+/* Reset & Base */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Inter', 'Roboto', sans-serif;
+  background: var(--deep-blue);
+  color: var(--text-dark);
+  min-height: 100vh;
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* Sacred Background Texture */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" opacity="0.05"><path fill="none" stroke="%23C9A03D" stroke-width="0.5" d="M20,20 L80,20 M20,30 L80,30 M20,40 L80,40 M20,50 L80,50 M20,60 L80,60 M20,70 L80,70 M20,80 L80,80 M30,20 L30,80 M40,20 L40,80 M50,20 L50,80 M60,20 L60,80 M70,20 L70,80"/><circle cx="50" cy="50" r="8" fill="none" stroke="%23C9A03D" stroke-width="0.5"/></svg>');
+  background-repeat: repeat;
+  pointer-events: none;
+  z-index: 0;
+}
+
+#app {
+  position: relative;
+  z-index: 1;
+}
+
+/* Typography */
+h1, h2, h3, h4, .app-title, .app-title-small {
+  font-family: 'Cormorant Garamond', 'Cinzel', 'Georgia', serif;
+  font-weight: 600;
+  letter-spacing: 1px;
+}
+
+.app-title {
+  font-size: 2rem;
+  color: var(--gold-primary);
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+  margin: 0.5rem 0;
+}
+
+.app-title-small {
+  font-size: 1.2rem;
+  color: var(--gold-primary);
+}
+
+.subtitle {
+  font-size: 0.9rem;
+  color: var(--gold-light);
+  font-style: italic;
+}
+
+/* Sacred Container */
+.sacred-container {
+  max-width: 500px;
+  margin: 2rem auto;
+  padding: 1rem;
+}
+
+/* Iconostasis Header */
+.iconostasis-header {
+  text-align: center;
+  padding: 1rem;
+  background: linear-gradient(180deg, var(--burgundy-dark) 0%, var(--burgundy) 100%);
+  border-radius: 20px 20px 40px 40px;
+  position: relative;
+  margin-bottom: 2rem;
+  box-shadow: var(--shadow-sacred);
+  border-bottom: 3px solid var(--gold-primary);
+}
+
+.domes {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  margin-bottom: 1rem;
+}
+
+.dome {
+  width: 40px;
+  height: 30px;
+  background: radial-gradient(ellipse at center, var(--gold-primary) 0%, var(--gold-dark) 100%);
+  border-radius: 50% 50% 0 0;
+  position: relative;
+}
+
+.dome::after {
+  content: '✠';
+  position: absolute;
+  top: -15px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: var(--ivory);
+  font-size: 12px;
+}
+
+.center-dome { width: 60px; height: 45px; }
+.left-dome, .right-dome { width: 35px; height: 26px; }
+
+.cross-top {
+  font-size: 2rem;
+  color: var(--gold-primary);
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+/* Arched Panel */
+.arched-panel {
+  background: var(--parchment);
+  border-radius: 30px 30px 20px 20px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: var(--shadow-sacred);
+  position: relative;
+  border: var(--border-gold);
+  transition: transform 0.3s ease;
+}
+
+.arched-panel::before {
+  content: '';
+  position: absolute;
+  top: -12px;
+  left: 20px;
+  right: 20px;
+  height: 12px;
+  background: radial-gradient(ellipse at center, var(--gold-primary) 0%, transparent 70%);
+  border-radius: 0 0 50% 50%;
+}
+
+.arched-panel:hover {
+  transform: translateY(-3px);
+}
+
+/* Login Card */
+.login-card {
+  text-align: center;
+  background: linear-gradient(135deg, var(--ivory) 0%, var(--parchment) 100%);
+}
+
+.icon-wrapper {
+  font-size: 3rem;
+  color: var(--gold-primary);
+  margin-bottom: 1rem;
+}
+
+/* Form Elements */
+.form-group {
+  margin-bottom: 1rem;
+  text-align: left;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+  color: var(--burgundy);
+}
+
+.form-group label i {
+  margin-right: 0.5rem;
+  color: var(--gold-primary);
+}
+
+input, select, textarea {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid var(--gold-dark);
+  border-radius: 10px;
+  font-family: 'Inter', sans-serif;
+  background: white;
+  transition: all 0.3s ease;
+}
+
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: var(--gold-primary);
+  box-shadow: 0 0 0 3px rgba(201, 160, 61, 0.2);
+}
+
+/* Buttons */
+.btn-gold {
+  background: linear-gradient(135deg, var(--gold-primary) 0%, var(--gold-dark) 100%);
+  color: var(--burgundy-dark);
+  border: none;
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  font-weight: bold;
+  border-radius: 30px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  width: 100%;
+  font-family: 'Cormorant Garamond', serif;
+}
+
+.btn-gold:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-gold);
+}
+
+.btn-small {
+  background: transparent;
+  border: 1px solid var(--gold-primary);
+  color: var(--gold-dark);
+  padding: 0.4rem 1rem;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 0.85rem;
+}
+
+.btn-small:hover {
+  background: var(--gold-primary);
+  color: var(--burgundy);
+}
+
+.btn-icon {
+  background: transparent;
+  border: none;
+  color: var(--gold-primary);
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 0.5rem;
+  transition: color 0.3s ease;
+}
+
+.btn-icon:hover {
+  color: var(--gold-light);
+}
+
+/* Navigation */
+.sacred-nav {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-top: 1rem;
+  padding: 0.5rem;
+  background: rgba(128, 0, 32, 0.9);
+  border-radius: 50px;
+}
+
+.nav-btn {
+  background: transparent;
+  border: none;
+  color: var(--gold-light);
+  padding: 0.6rem 1.2rem;
+  border-radius: 30px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-family: 'Cormorant Garamond', serif;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.nav-btn i {
+  font-size: 1rem;
+}
+
+.nav-btn:hover, .nav-btn.active {
+  background: var(--gold-primary);
+  color: var(--burgundy-dark);
+}
+
+/* Tasks List */
+.tasks-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.task-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  background: var(--ivory);
+  border-radius: 15px;
+  border-left: 4px solid var(--gold-primary);
+  transition: all 0.3s ease;
+}
+
+.task-item.completed {
+  border-left-color: var(--liturgical-green);
+  background: linear-gradient(90deg, var(--ivory) 0%, rgba(46, 90, 46, 0.1) 100%);
+}
+
+.task-checkbox {
+  width: 24px;
+  height: 24px;
+  cursor: pointer;
+  accent-color: var(--gold-primary);
+}
+
+.task-content {
+  flex: 1;
+}
+
+.task-title {
+  font-weight: 600;
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.1rem;
+}
+
+.task-description {
+  font-size: 0.85rem;
+  color: #666;
+}
+
+.task-icon {
+  font-size: 1.5rem;
+}
+
+/* Completion Halo Effect */
+.task-item.completed {
+  box-shadow: 0 0 15px rgba(201, 160, 61, 0.5);
+  animation: halo-glow 0.5s ease;
+}
+
+@keyframes halo-glow {
+  0% { box-shadow: 0 0 0 0 rgba(201, 160, 61, 0.7); }
+  100% { box-shadow: 0 0 20px 5px rgba(201, 160, 61, 0.3); }
+}
+
+/* Daily Inspiration */
+.daily-inspiration {
+  text-align: center;
+  background: linear-gradient(135deg, var(--burgundy) 0%, var(--burgundy-dark) 100%);
+  color: var(--gold-light);
+}
+
+.daily-inspiration h3 {
+  color: var(--gold-primary);
+}
+
+.inspiration-text {
+  font-size: 1.2rem;
+  font-family: 'EB Garamond', serif;
+  margin: 1rem 0;
+  font-style: italic;
+  line-height: 1.6;
+}
+
+.inspiration-source {
+  font-size: 0.85rem;
+  opacity: 0.8;
+  margin-bottom: 1rem;
+}
+
+.scroll-icon {
+  font-size: 2rem;
+  color: var(--gold-primary);
+  margin-bottom: 0.5rem;
+}
+
+/* Candle Stand */
+.candle-stand {
+  text-align: center;
+  margin-top: 2rem;
+  padding: 1rem;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 50px;
+}
+
+.candle {
+  width: 40px;
+  height: 80px;
+  margin: 0 auto;
+  position: relative;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.candle:hover {
+  transform: scale(1.05);
+}
+
+.wax {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  height: 70px;
+  background: linear-gradient(135deg, #F5DEB3 0%, #DEB887 100%);
+  border-radius: 5px 5px 8px 8px;
+}
+
+.wick {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 2px;
+  height: 12px;
+  background: #333;
+}
+
+.flame {
+  position: absolute;
+  top: -15px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 12px;
+  height: 20px;
+  background: radial-gradient(ellipse at center, #FF6B00 0%, #FF3300 70%);
+  border-radius: 50% 50% 20% 20%;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  box-shadow: 0 0 10px #FF6B00;
+}
+
+.flame.lit {
+  opacity: 1;
+  animation: flicker 0.3s infinite alternate;
+}
+
+@keyframes flicker {
+  0% { transform: translateX(-50%) scale(1); opacity: 0.8; }
+  100% { transform: translateX(-50%) scale(1.1); opacity: 1; }
+}
+
+.candle-counter {
+  margin-top: 0.5rem;
+  font-size: 0.8rem;
+  color: var(--gold-light);
+}
+
+/* User Progress List */
+.user-progress-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.progress-item {
+  background: var(--ivory);
+  padding: 1rem;
+  border-radius: 15px;
+  border-left: 4px solid var(--gold-primary);
+}
+
+.progress-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+}
+
+.progress-bar {
+  background: #e0e0e0;
+  border-radius: 10px;
+  height: 8px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  background: linear-gradient(90deg, var(--gold-primary) 0%, var(--gold-dark) 100%);
+  height: 100%;
+  border-radius: 10px;
+  transition: width 0.5s ease;
+}
+
+.streak-badge {
+  font-size: 0.75rem;
+  color: var(--liturgical-green);
+}
+
+/* Stats Summary */
+.stats-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.stat-card {
+  background: linear-gradient(135deg, var(--burgundy) 0%, var(--burgundy-dark) 100%);
+  padding: 1rem;
+  border-radius: 15px;
+  text-align: center;
+  color: var(--gold-light);
+}
+
+.stat-value {
+  font-size: 2rem;
+  font-weight: bold;
+  font-family: 'Cormorant Garamond', serif;
+  color: var(--gold-primary);
+}
+
+.stat-label {
+  font-size: 0.75rem;
+  margin-top: 0.25rem;
+}
+
+/* Users List */
+.users-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.user-card {
+  background: var(--ivory);
+  padding: 1rem;
+  border-radius: 15px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.user-info {
+  flex: 1;
+}
+
+.user-name {
+  font-weight: 600;
+  font-family: 'Cormorant Garamond', serif;
+}
+
+.user-role {
+  font-size: 0.75rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 20px;
+  background: var(--gold-light);
+  display: inline-block;
+}
+
+.user-role.root { background: var(--royal-blue); color: white; }
+.user-role.admin { background: var(--burgundy); color: white; }
+.user-role.standard { background: var(--liturgical-green); color: white; }
+
+.user-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.action-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0.3rem;
+  border-radius: 50%;
+  transition: all 0.3s ease;
+}
+
+.action-btn.reset { color: var(--gold-primary); }
+.action-btn.delete { color: var(--liturgical-red); }
+
+/* Audit Logs */
+.audit-logs {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.audit-entry {
+  padding: 0.75rem;
+  border-bottom: 1px solid var(--gold-light);
+  font-size: 0.85rem;
+}
+
+.audit-icon {
+  margin-right: 0.5rem;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .sacred-nav {
+    gap: 0.25rem;
+  }
+  
+  .nav-btn {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.75rem;
+  }
+  
+  .nav-btn i {
+    font-size: 0.8rem;
+  }
+  
+  .app-title {
+    font-size: 1.5rem;
+  }
+  
+  .arched-panel {
+    padding: 1rem;
+  }
+  
+  .stats-summary {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  
+  .user-card {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .user-actions {
+    align-self: flex-end;
+  }
+}
+
+@media (max-width: 480px) {
+  .stats-summary {
+    gap: 0.5rem;
+  }
+  
+  .stat-value {
+    font-size: 1.2rem;
+  }
+  
+  .nav-btn span {
+    display: none;
+  }
+  
+  .nav-btn i {
+    font-size: 1.2rem;
+  }
+  
+  .nav-btn {
+    padding: 0.5rem;
+  }
+}
+
+/* Calendar Styling */
+.sacred-calendar {
+  background: var(--ivory);
+  border-radius: 15px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+.fc {
+  font-family: 'Inter', sans-serif;
+}
+
+.fc-toolbar-title {
+  font-family: 'Cormorant Garamond', serif;
+  color: var(--burgundy);
+}
+
+/* Warning Box */
+.warning-box {
+  background: rgba(196, 30, 58, 0.1);
+  border-left: 4px solid var(--liturgical-red);
+  padding: 0.75rem;
+  margin: 1rem 0;
+  font-size: 0.85rem;
+  border-radius: 8px;
+}
+
+.warning-box i {
+  color: var(--liturgical-red);
+  margin-right: 0.5rem;
+}
+
+/* Role Badge */
+.role-badge {
+  display: inline-block;
+  padding: 0.2rem 0.6rem;
+  border-radius: 20px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  margin-left: 0.5rem;
+}
+
+.role-badge.root { background: var(--royal-blue); color: white; }
+.role-badge.admin { background: var(--burgundy); color: white; }
+.role-badge.standard { background: var(--liturgical-green); color: white; }
+
+/* Admin Tabs */
+.admin-tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.admin-tab {
+  padding: 0.5rem 1rem;
+  background: transparent;
+  border: 1px solid var(--gold-primary);
+  border-radius: 30px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.admin-tab.active {
+  background: var(--gold-primary);
+  color: var(--burgundy);
+}
+
+/* Hidden Elements */
+.hidden {
+  display: none;
+}
+
+/* Error Message */
+.error-message {
+  color: var(--liturgical-red);
+  margin-top: 1rem;
+  font-size: 0.85rem;
+}
+
+/* Loading Spinner */
+.loading {
+  text-align: center;
+  padding: 2rem;
+  color: var(--gold-primary);
+}
