@@ -1,4 +1,6 @@
 module.exports = (db) => {
+  console.log('Initializing database...');
+  
   // Initialize database defaults
   db.defaults({
     users: [],
@@ -25,37 +27,43 @@ module.exports = (db) => {
     inspiration: {
       quotes: [
         { text: 'ሰው በእንጀራ ብቻ አይኖርም፤ በእግዚአብሔር አፍ በሚወጣ በየቃሉ ሁሉ ይኖራል።', source: 'ማቴዎስ 4:4', type: 'scripture' },
-        { text: 'እግዚአብሔርን ፈራ ትእዛዛቱንም ጠብቅ፤ ይህ የሰው ሁሉ ዕጣ ፈንታ ነውና።', source: 'መክብብ 12:13', type: 'scripture' },
-        { text: 'ጸሎት ማለት ከእግዚአብሔር ጋር መነጋገር ነው። እንደ ልጅ ከአባቱ ጋር በቀላሉ ንገሩት።', source: 'ቅዱስ ዮሐንስ አፈወርቅ', type: 'saint' },
-        { text: 'ልብህን ሰጠኝ ልቤንም ስጠኝ። እንዲህ ነው እግዚአብሔር የሚወደው።', source: 'ቅዱስ ሲልዋኖስ', type: 'saint' }
+        { text: 'እግዚአብሔርን ፈራ ትእዛዛቱንም ጠብቅ፤ ይህ የሰው ሁሉ ዕጣ ፈንታ ነውና።', source: 'መክብብ 12:13', type: 'scripture' }
       ]
     }
   }).write();
+  
+  console.log('Database defaults written');
 
   // Create default root admin if no users exist
   const users = db.get('users').value();
+  console.log('Current users:', users.length);
+  
   if (users.length === 0) {
+    console.log('No users found, creating default admin...');
     const bcrypt = require('bcryptjs');
     const defaultPassword = bcrypt.hashSync('admin123', 10);
     
-    db.get('users')
-      .push({
-        id: 'root_admin_default',
-        username: 'admin',
-        passwordHash: defaultPassword,
-        role: 'root_admin',
-        fullName: 'መጀመሪያ አስተዳዳሪ',
-        email: '',
-        createdAt: new Date().toISOString(),
-        createdByUserId: 'system',
-        lastLogin: null,
-        isActive: true,
-        notes: 'Default root admin - please change password',
-        rootAdminBadge: 'Founder'
-      })
-      .write();
+    const newUser = {
+      id: 'root_admin_default',
+      username: 'admin',
+      passwordHash: defaultPassword,
+      role: 'root_admin',
+      fullName: 'መጀመሪያ አስተዳዳሪ',
+      email: '',
+      createdAt: new Date().toISOString(),
+      createdByUserId: 'system',
+      lastLogin: null,
+      isActive: true,
+      notes: 'Default root admin - please change password',
+      rootAdminBadge: 'Founder'
+    };
     
-    // Add audit log for default admin creation
+    db.get('users').push(newUser).write();
+    console.log('Default admin created successfully!');
+    console.log('Username: admin');
+    console.log('Password: admin123');
+    
+    // Add audit log
     db.get('auditLogs')
       .push({
         id: 'audit_default',
@@ -66,9 +74,8 @@ module.exports = (db) => {
         timestamp: new Date().toISOString()
       })
       .write();
-    
-    console.log('✠ Default root admin created (username: admin, password: admin123) ✠');
-    console.log('✠ Please change the password after first login for security ✠');
+  } else {
+    console.log('Users already exist, skipping default creation');
   }
   
   return db;
