@@ -15,6 +15,7 @@ document.addEventListener('DOMContentLoaded', () => {
   checkAuth();
   setupEventListeners();
   setupCandle();
+  setupPasswordToggles(); // NEW: Setup password toggle buttons
 });
 
 async function checkAuth() {
@@ -71,6 +72,61 @@ function setupEventListeners() {
   }
 }
 
+// NEW: Function to setup password toggle functionality
+function setupPasswordToggles() {
+  // Find all toggle password buttons
+  const toggleButtons = document.querySelectorAll('.toggle-password');
+  
+  toggleButtons.forEach(button => {
+    // Remove any existing event listeners to avoid duplicates
+    button.removeEventListener('click', handlePasswordToggle);
+    // Add new event listener
+    button.addEventListener('click', handlePasswordToggle);
+  });
+}
+
+// NEW: Handle password toggle click
+function handlePasswordToggle(event) {
+  event.preventDefault();
+  const button = event.currentTarget;
+  const targetId = button.getAttribute('data-target');
+  const passwordInput = document.getElementById(targetId);
+  const icon = button.querySelector('i');
+  
+  if (passwordInput) {
+    // Toggle the type attribute
+    const currentType = passwordInput.getAttribute('type');
+    const newType = currentType === 'password' ? 'text' : 'password';
+    passwordInput.setAttribute('type', newType);
+    
+    // Toggle the icon
+    if (icon) {
+      if (newType === 'text') {
+        // Show password - change icon to eye-slash
+        icon.classList.remove('fa-eye');
+        icon.classList.add('fa-eye-slash');
+      } else {
+        // Hide password - change icon to eye
+        icon.classList.remove('fa-eye-slash');
+        icon.classList.add('fa-eye');
+      }
+    }
+    
+    // Toggle active class on button
+    button.classList.toggle('active', newType === 'text');
+    
+    // Optional: Add visual feedback for screen readers
+    const isVisible = newType === 'text';
+    button.setAttribute('aria-label', isVisible ? 'Hide password' : 'Show password');
+    
+    // Optional: Add a subtle animation effect
+    button.style.transform = 'translateY(-50%) scale(0.95)';
+    setTimeout(() => {
+      button.style.transform = 'translateY(-50%) scale(1)';
+    }, 150);
+  }
+}
+
 async function handleLogin(e) {
   e.preventDefault();
   
@@ -111,6 +167,26 @@ function logout() {
   currentUser = null;
   loginSection.style.display = 'block';
   mainApp.style.display = 'none';
+  
+  // Reset password fields visibility when logging out
+  const passwordInputs = document.querySelectorAll('input[type="password"], input[type="text"]');
+  passwordInputs.forEach(input => {
+    if (input.id === 'login-password' || input.id === 'new-password' || input.id === 'root-password') {
+      input.setAttribute('type', 'password');
+    }
+  });
+  
+  // Reset toggle buttons icons
+  const toggleButtons = document.querySelectorAll('.toggle-password');
+  toggleButtons.forEach(button => {
+    const icon = button.querySelector('i');
+    if (icon) {
+      icon.classList.remove('fa-eye-slash');
+      icon.classList.add('fa-eye');
+    }
+    button.classList.remove('active');
+    button.setAttribute('aria-label', 'Show password');
+  });
 }
 
 function showMainApp() {
@@ -141,6 +217,9 @@ function showMainApp() {
       el.style.display = 'none';
     }
   });
+  
+  // Re-initialize password toggles for any dynamically added content
+  setupPasswordToggles();
   
   // Load initial data
   loadDashboard();
@@ -174,6 +253,11 @@ function switchView(view) {
   
   if (view === 'tasks') {
     loadTasksForDate(new Date().toISOString().split('T')[0]);
+  }
+  
+  // Re-initialize password toggles when switching to admin view
+  if (view === 'admin') {
+    setupPasswordToggles();
   }
 }
 
@@ -328,3 +412,56 @@ function setupCandle() {
     });
   }
 }
+
+// NEW: Function to handle form resets for password fields (can be called when creating new users)
+window.resetPasswordVisibility = function() {
+  const passwordFields = ['login-password', 'new-password', 'root-password'];
+  passwordFields.forEach(fieldId => {
+    const field = document.getElementById(fieldId);
+    if (field && field.getAttribute('type') === 'text') {
+      field.setAttribute('type', 'password');
+    }
+  });
+  
+  const toggleButtons = document.querySelectorAll('.toggle-password');
+  toggleButtons.forEach(button => {
+    const icon = button.querySelector('i');
+    if (icon && icon.classList.contains('fa-eye-slash')) {
+      icon.classList.remove('fa-eye-slash');
+      icon.classList.add('fa-eye');
+    }
+    button.classList.remove('active');
+    button.setAttribute('aria-label', 'Show password');
+  });
+};
+
+// NEW: Add keyboard accessibility for password toggle
+document.addEventListener('keydown', function(event) {
+  // If user presses Enter or Space on a toggle button, trigger the click
+  if (event.target.classList && event.target.classList.contains('toggle-password')) {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      event.target.click();
+    }
+  }
+});
+
+// NEW: MutationObserver to handle dynamically added password fields
+const observer = new MutationObserver(function(mutations) {
+  mutations.forEach(function(mutation) {
+    if (mutation.type === 'childList') {
+      // Check for newly added toggle buttons
+      const newToggleButtons = document.querySelectorAll('.toggle-password:not([data-listener-attached])');
+      newToggleButtons.forEach(button => {
+        button.setAttribute('data-listener-attached', 'true');
+        button.addEventListener('click', handlePasswordToggle);
+      });
+    }
+  });
+});
+
+// Start observing the document for dynamic changes
+observer.observe(document.body, {
+  childList: true,
+  subtree: true
+});
