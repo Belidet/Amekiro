@@ -2,7 +2,7 @@
   "version": 2,
   "builds": [
     {
-      "src": "server.js",
+      "src": "api/index.js",
       "use": "@vercel/node"
     },
     {
@@ -13,7 +13,7 @@
   "routes": [
     {
       "src": "/api/(.*)",
-      "dest": "/server.js"
+      "dest": "/api/index.js"
     },
     {
       "src": "/(.*)",
@@ -21,6 +21,6 @@
     }
   ],
   "env": {
-    "JWT_SECRET": "your-secret-key-change-this-in-vercel-dashboard"
+    "JWT_SECRET": "your-secure-secret-key-change-this"
   }
 }
