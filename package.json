@@ -1,11 +1,12 @@
 {
-  "name": "family-reminder-tracker",
+  "name": "amekiro",
   "version": "1.0.0",
   "description": "የአመክሮ ቤተሰብ መከታተያ - Spiritual task tracking app with Orthodox Christian design",
-  "main": "server.js",
+  "main": "api/index.js",
   "scripts": {
-    "start": "node server.js",
-    "dev": "nodemon server.js"
+    "start": "node api/index.js",
+    "dev": "nodemon api/index.js",
+    "vercel-build": "echo 'Building for Vercel...'"
   },
   "dependencies": {
     "express": "^4.18.2",
@@ -21,5 +22,8 @@
   },
   "devDependencies": {
     "nodemon": "^3.0.1"
+  },
+  "engines": {
+    "node": ">=14.0.0"
   }
 }
