@@ -185,6 +185,7 @@ h1, h2, h3, h4, .app-title, .app-title-small {
 .form-group {
   margin-bottom: 1rem;
   text-align: left;
+  position: relative;
 }
 
 .form-group label {
@@ -213,6 +214,60 @@ input:focus, select:focus, textarea:focus {
   outline: none;
   border-color: var(--gold-primary);
   box-shadow: 0 0 0 3px rgba(201, 160, 61, 0.2);
+}
+
+/* Password Container - NEW */
+.password-container {
+  position: relative;
+  width: 100%;
+}
+
+.password-container input {
+  width: 100%;
+  padding-right: 45px;
+}
+
+/* Toggle Password Button - NEW */
+.toggle-password {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1.1rem;
+  padding: 0;
+  color: var(--gold-primary);
+  transition: all 0.3s ease;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+}
+
+.toggle-password:hover {
+  color: var(--gold-dark);
+  background: rgba(201, 160, 61, 0.1);
+  transform: translateY(-50%) scale(1.05);
+}
+
+.toggle-password:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(201, 160, 61, 0.3);
+}
+
+.toggle-password i {
+  font-size: 1.1rem;
+  pointer-events: none;
+}
+
+/* Active state for toggle button - NEW */
+.toggle-password.active {
+  color: var(--gold-dark);
 }
 
 /* Buttons */
@@ -639,6 +694,21 @@ input:focus, select:focus, textarea:focus {
   .user-actions {
     align-self: flex-end;
   }
+  
+  /* Password toggle mobile adjustments - NEW */
+  .toggle-password {
+    right: 10px;
+    width: 28px;
+    height: 28px;
+  }
+  
+  .toggle-password i {
+    font-size: 1rem;
+  }
+  
+  .password-container input {
+    padding-right: 40px;
+  }
 }
 
 @media (max-width: 480px) {
@@ -660,6 +730,13 @@ input:focus, select:focus, textarea:focus {
   
   .nav-btn {
     padding: 0.5rem;
+  }
+  
+  /* Password toggle mobile adjustments - NEW */
+  .toggle-password {
+    right: 8px;
+    width: 32px;
+    height: 32px;
   }
 }
 
@@ -748,4 +825,10 @@ input:focus, select:focus, textarea:focus {
   text-align: center;
   padding: 2rem;
   color: var(--gold-primary);
+}
+
+/* Accessibility - Focus Visible for Password Toggle - NEW */
+.toggle-password:focus-visible {
+  outline: 2px solid var(--gold-primary);
+  outline-offset: 2px;
 }
