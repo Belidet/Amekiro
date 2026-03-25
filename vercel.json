@@ -21,6 +21,6 @@
     }
   ],
   "env": {
-    "JWT_SECRET": "@jwt_secret"
+    "JWT_SECRET": "your-secret-key-change-this-in-vercel-dashboard"
   }
 }
