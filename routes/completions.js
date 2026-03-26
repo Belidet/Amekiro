@@ -1,113 +1,81 @@
-const express = require('express');
-const router = express.Router();
-
-module.exports = (db, uuidv4, authenticateToken, requireRole) => {
-  // Get current user's completions for a date
-  router.get('/my', authenticateToken, (req, res) => {
-    const { date } = req.query;
-    if (!date) {
-      return res.status(400).json({ error: 'Date parameter required (YYYY-MM-DD)' });
-    }
-    
-    const completions = db.get('completions')
-      .filter(c => c.userId === req.user.id && c.date === date)
-      .value();
-    
-    res.json(completions);
-  });
+module.exports = function(db, uuidv4, authenticateToken, requireRole) {
+  const router = require('express').Router();
   
-  // Get all users' completions for a date (admin only)
-  router.get('/group', authenticateToken, requireRole('root_admin', 'admin'), (req, res) => {
+  // Get completions for a date
+  router.get('/', authenticateToken, (req, res) => {
     const { date } = req.query;
-    if (!date) {
-      return res.status(400).json({ error: 'Date parameter required (YYYY-MM-DD)' });
-    }
+    const userId = req.user.id;
     
     let completions = db.get('completions')
-      .filter(c => c.date === date)
+      .filter({ userId })
       .value();
-    
-    // For standard admins, only show completions for standard users
-    if (req.user.role === 'admin') {
-      const standardUsers = db.get('users')
-        .filter(u => u.role === 'standard' && u.isActive === true)
-        .map(u => u.id)
-        .value();
-      
-      completions = completions.filter(c => standardUsers.includes(c.userId));
-    }
-    
-    res.json(completions);
-  });
-  
-  // Get completions for a specific user (admin or self)
-  router.get('/user/:userId', authenticateToken, (req, res) => {
-    const { userId } = req.params;
-    const { date } = req.query;
-    
-    // Permission check
-    if (req.user.role === 'standard' && req.user.id !== userId) {
-      return res.status(403).json({ error: 'Cannot view other users\' completions' });
-    }
-    
-    if (req.user.role === 'admin') {
-      const targetUser = db.get('users').find({ id: userId }).value();
-      if (targetUser && targetUser.role === 'root_admin') {
-        return res.status(403).json({ error: 'Cannot view root admin completions' });
-      }
-    }
-    
-    let completions = db.get('completions')
-      .filter(c => c.userId === userId);
     
     if (date) {
       completions = completions.filter(c => c.date === date);
     }
     
-    res.json(completions.value());
+    res.json(completions);
   });
   
-  // Mark task complete/incomplete
+  // Toggle completion
   router.post('/', authenticateToken, (req, res) => {
-    const { taskType, taskId, date, completed, notes } = req.body;
+    const { taskId, taskType, date, completed } = req.body;
+    const userId = req.user.id;
     
-    if (!taskType || !taskId || !date) {
-      return res.status(400).json({ error: 'taskType, taskId, and date are required' });
+    if (!taskId || !date) {
+      return res.status(400).json({ error: 'Task ID and date required' });
     }
     
-    // Check if completion exists
-    let completion = db.get('completions')
-      .find(c => c.userId === req.user.id && c.taskType === taskType && c.taskId === taskId && c.date === date)
+    const existing = db.get('completions')
+      .find({ userId, taskId, taskType, date })
       .value();
     
-    if (completion) {
-      // Update existing
+    if (existing) {
       db.get('completions')
-        .find({ id: completion.id })
-        .assign({
-          completed: completed || false,
-          completedAt: completed ? new Date().toISOString() : null,
-          notes: notes || completion.notes
+        .find({ userId, taskId, taskType, date })
+        .assign({ 
+          completed, 
+          updatedAt: new Date().toISOString() 
         })
         .write();
-      
-      res.json({ ...completion, completed, completedAt: completed ? new Date().toISOString() : null });
     } else {
-      // Create new
-      const newCompletion = {
-        id: uuidv4(),
-        userId: req.user.id,
-        taskType,
-        taskId,
-        date,
-        completed: completed || false,
-        completedAt: completed ? new Date().toISOString() : null,
-        notes: notes || null
-      };
-      
-      db.get('completions').push(newCompletion).write();
-      res.status(201).json(newCompletion);
+      db.get('completions')
+        .push({
+          id: uuidv4(),
+          userId,
+          taskId,
+          taskType: taskType || 'daily',
+          date,
+          completed,
+          createdAt: new Date().toISOString()
+        })
+        .write();
     }
+    
+    res.json({ success: true });
+  });
+  
+  // Get statistics (admin only)
+  router.get('/stats', authenticateToken, requireRole('admin', 'root_admin'), (req, res) => {
+    const users = db.get('users').value();
+    const completions = db.get('completions').value();
+    
+    const stats = users.map(user => {
+      const userCompletions = completions.filter(c => c.userId === user.id);
+      const completedCount = userCompletions.filter(c => c.completed).length;
+      const totalCount = userCompletions.length;
+      
+      return {
+        userId: user.id,
+        username: user.username,
+        fullName: user.fullName,
+        completedCount,
+        totalCount,
+        percentage: totalCount > 0 ? (completedCount / totalCount) * 100 : 0
+      };
+    });
+    
+    res.json(stats);
   });
   
   return router;
