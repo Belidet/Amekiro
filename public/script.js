@@ -3,11 +3,9 @@ let currentUser = null;
 let token = null;
 
 // API Configuration - Automatically detects environment
-const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-  ? '' // Use relative paths for local development
-  : ''; // Use relative paths for production (since API is on same domain)
+const API_BASE_URL = '';
 
-// Helper function for API calls
+// Helper function for API calls with timeout
 async function apiCall(endpoint, options = {}) {
   const url = `${API_BASE_URL}${endpoint}`;
   const headers = {
@@ -19,14 +17,20 @@ async function apiCall(endpoint, options = {}) {
     headers['Authorization'] = `Bearer ${token}`;
   }
   
+  // Add timeout to prevent hanging
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 10000);
+  
   try {
     const response = await fetch(url, {
       ...options,
-      headers
+      headers,
+      signal: controller.signal
     });
     
+    clearTimeout(timeoutId);
+    
     if (response.status === 401 || response.status === 403) {
-      // Token expired or invalid
       if (currentUser) {
         logout();
       }
@@ -35,6 +39,11 @@ async function apiCall(endpoint, options = {}) {
     
     return response;
   } catch (error) {
+    clearTimeout(timeoutId);
+    if (error.name === 'AbortError') {
+      console.error('API call timeout:', endpoint);
+      throw new Error('Request timeout');
+    }
     console.error('API call failed:', error);
     throw error;
   }
@@ -48,12 +57,25 @@ const logoutBtn = document.getElementById('logout-btn');
 const userDisplay = document.getElementById('user-name-display');
 const userRoleBadge = document.getElementById('user-role-badge');
 
-// Check authentication on load
+// Check authentication on load with immediate display
 document.addEventListener('DOMContentLoaded', () => {
-  checkAuth();
+  console.log('App starting...');
+  
+  // Show login form immediately to prevent blank screen
+  loginSection.style.display = 'block';
+  mainApp.style.display = 'none';
+  
+  // Setup password toggles immediately
+  setupPasswordToggles();
+  
+  // Setup event listeners
   setupEventListeners();
   setupCandle();
-  setupPasswordToggles();
+  
+  // Check auth in background (won't block UI)
+  setTimeout(() => {
+    checkAuth();
+  }, 100);
 });
 
 // Setup password toggle functionality
@@ -120,13 +142,17 @@ async function checkAuth() {
       }
     } catch (error) {
       console.error('Auth check failed:', error);
+      // Keep showing login form
       logout();
     }
   }
 }
 
 function setupEventListeners() {
-  loginForm.addEventListener('submit', handleLogin);
+  if (loginForm) {
+    loginForm.addEventListener('submit', handleLogin);
+  }
+  
   if (logoutBtn) logoutBtn.addEventListener('click', logout);
   
   // Navigation
@@ -206,8 +232,14 @@ async function handleLogin(e) {
   const username = document.getElementById('login-username').value;
   const password = document.getElementById('login-password').value;
   const errorDiv = document.getElementById('login-error');
+  const submitButton = loginForm.querySelector('button[type="submit"]');
   
   errorDiv.textContent = '';
+  
+  // Disable button and show loading
+  submitButton.disabled = true;
+  const originalButtonText = submitButton.innerHTML;
+  submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> በመግባት ላይ...';
   
   try {
     const response = await apiCall('/api/auth/login', {
@@ -229,6 +261,10 @@ async function handleLogin(e) {
   } catch (error) {
     console.error('Login error:', error);
     errorDiv.textContent = 'Connection error. Please try again.';
+  } finally {
+    // Re-enable button
+    submitButton.disabled = false;
+    submitButton.innerHTML = originalButtonText;
   }
 }
 
@@ -262,16 +298,18 @@ function showMainApp() {
   loginSection.style.display = 'none';
   mainApp.style.display = 'block';
   
-  userDisplay.textContent = currentUser.fullName || currentUser.username;
-  const roleClass = currentUser.role === 'root_admin' ? 'root' : currentUser.role;
-  userRoleBadge.textContent = currentUser.role === 'root_admin' ? 'ሥር አስተዳዳሪ' : 
-                               (currentUser.role === 'admin' ? 'አስተዳዳሪ' : 'ተጠቃሚ');
-  userRoleBadge.className = `role-badge ${roleClass}`;
+  if (currentUser) {
+    userDisplay.textContent = currentUser.fullName || currentUser.username;
+    const roleClass = currentUser.role === 'root_admin' ? 'root' : currentUser.role;
+    userRoleBadge.textContent = currentUser.role === 'root_admin' ? 'ሥር አስተዳዳሪ' : 
+                                 (currentUser.role === 'admin' ? 'አስተዳዳሪ' : 'ተጠቃሚ');
+    userRoleBadge.className = `role-badge ${roleClass}`;
+  }
   
   // Show/hide admin elements
   const adminElements = document.querySelectorAll('.admin-only');
   adminElements.forEach(el => {
-    if (currentUser.role === 'root_admin' || currentUser.role === 'admin') {
+    if (currentUser && (currentUser.role === 'root_admin' || currentUser.role === 'admin')) {
       el.style.display = '';
     } else {
       el.style.display = 'none';
@@ -280,7 +318,7 @@ function showMainApp() {
   
   const rootElements = document.querySelectorAll('.root-only');
   rootElements.forEach(el => {
-    if (currentUser.role === 'root_admin') {
+    if (currentUser && currentUser.role === 'root_admin') {
       el.style.display = '';
     } else {
       el.style.display = 'none';
@@ -292,13 +330,13 @@ function showMainApp() {
     setupPasswordToggles();
   }, 100);
   
-  // Load initial data
+  // Load initial data (non-blocking)
   loadDashboard();
   loadTodayTasks();
   loadDailyInspiration();
   
   // Load admin data if user is admin
-  if (currentUser.role === 'admin' || currentUser.role === 'root_admin') {
+  if (currentUser && (currentUser.role === 'admin' || currentUser.role === 'root_admin')) {
     loadUsersList();
   }
 }
@@ -336,7 +374,7 @@ function switchView(view) {
     setTimeout(() => setupPasswordToggles(), 100);
   }
   
-  if (view === 'analytics' && (currentUser.role === 'admin' || currentUser.role === 'root_admin')) {
+  if (view === 'analytics' && currentUser && (currentUser.role === 'admin' || currentUser.role === 'root_admin')) {
     loadAnalytics();
   }
 }
@@ -365,6 +403,11 @@ function switchAdminTab(tabName) {
 }
 
 async function loadDashboard() {
+  if (!token) return;
+  
+  const statsGrid = document.getElementById('stats-grid');
+  if (!statsGrid) return;
+  
   try {
     const date = new Date().toISOString().split('T')[0];
     const response = await apiCall(`/api/completions?date=${date}`);
@@ -372,21 +415,28 @@ async function loadDashboard() {
     const completedCount = completions.filter(c => c.completed).length;
     const totalTasks = 2;
     
-    const statsGrid = document.getElementById('stats-grid');
-    if (statsGrid) {
-      statsGrid.innerHTML = `
-        <div class="stat-card">
-          <div class="stat-value">${completedCount}/${totalTasks}</div>
-          <div class="stat-label">የዛሬ ሥራዎች</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-value">${Math.round((completedCount / totalTasks) * 100) || 0}%</div>
-          <div class="stat-label">ማጠናቀቅ</div>
-        </div>
-      `;
-    }
+    statsGrid.innerHTML = `
+      <div class="stat-card">
+        <div class="stat-value">${completedCount}/${totalTasks}</div>
+        <div class="stat-label">የዛሬ ሥራዎች</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value">${Math.round((completedCount / totalTasks) * 100) || 0}%</div>
+        <div class="stat-label">ማጠናቀቅ</div>
+      </div>
+    `;
   } catch (error) {
     console.error('Error loading dashboard:', error);
+    statsGrid.innerHTML = `
+      <div class="stat-card">
+        <div class="stat-value">0/2</div>
+        <div class="stat-label">የዛሬ ሥራዎች</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value">0%</div>
+        <div class="stat-label">ማጠናቀቅ</div>
+      </div>
+    `;
   }
 }
 
@@ -397,7 +447,7 @@ async function loadTodayTasks() {
 
 async function loadTasksForDate(date) {
   const container = document.getElementById('tasks-list-container') || document.getElementById('today-tasks-list');
-  if (!container) return;
+  if (!container || !token) return;
   
   try {
     const dailyResponse = await apiCall('/api/tasks/daily');
@@ -405,6 +455,11 @@ async function loadTasksForDate(date) {
     
     const completionsResponse = await apiCall(`/api/completions?date=${date}`);
     const completions = await completionsResponse.json();
+    
+    if (!dailyTasks || dailyTasks.length === 0) {
+      container.innerHTML = '<div class="task-item">No tasks available</div>';
+      return;
+    }
     
     container.innerHTML = dailyTasks.map(task => {
       const completion = completions.find(c => c.taskType === 'daily' && c.taskId === task.id);
@@ -418,7 +473,7 @@ async function loadTasksForDate(date) {
             ${task.descriptionAmharic ? `<div class="task-description">${task.descriptionAmharic}</div>` : ''}
           </div>
           <input type="checkbox" class="task-checkbox" ${isCompleted ? 'checked' : ''} 
-                 onchange="toggleTaskCompletion('${task.id}', 'daily', '${date}', this.checked)">
+                 onchange="window.toggleTaskCompletion('${task.id}', 'daily', '${date}', this.checked)">
         </div>
       `;
     }).join('');
@@ -432,6 +487,8 @@ async function loadTasksForDate(date) {
 }
 
 window.toggleTaskCompletion = async function(taskId, taskType, date, completed) {
+  if (!token) return;
+  
   try {
     const response = await apiCall('/api/completions', {
       method: 'POST',
@@ -467,8 +524,8 @@ async function loadDailyInspiration() {
     const response = await apiCall('/api/inspiration/random');
     const data = await response.json();
     
-    inspirationText.textContent = data.text;
-    inspirationSource.textContent = data.source;
+    inspirationText.textContent = data.text || "እግዚአብሔር ፍቅር ነው።";
+    inspirationSource.textContent = data.source || "1 ዮሐንስ 4:8";
     
     inspirationText.style.opacity = '0';
     setTimeout(() => {
@@ -477,16 +534,23 @@ async function loadDailyInspiration() {
     }, 10);
   } catch (error) {
     console.error('Error loading inspiration:', error);
+    inspirationText.textContent = "እግዚአብሔር ፍቅር ነው።";
+    inspirationSource.textContent = "1 ዮሐንስ 4:8";
   }
 }
 
 async function loadUsersList() {
   const usersList = document.getElementById('users-list');
-  if (!usersList) return;
+  if (!usersList || !token) return;
   
   try {
     const response = await apiCall('/api/users');
     const users = await response.json();
+    
+    if (!users || users.length === 0) {
+      usersList.innerHTML = '<div class="user-card">No users found</div>';
+      return;
+    }
     
     usersList.innerHTML = users.map(user => `
       <div class="user-card">
@@ -496,12 +560,13 @@ async function loadUsersList() {
           <div class="user-username">@${user.username}</div>
         </div>
         <div class="user-actions">
-          ${user.id !== currentUser?.id ? `<button class="action-btn delete" onclick="deleteUser('${user.id}')"><i class="fas fa-trash"></i></button>` : ''}
+          ${user.id !== currentUser?.id ? `<button class="action-btn delete" onclick="window.deleteUser('${user.id}')"><i class="fas fa-trash"></i></button>` : ''}
         </div>
       </div>
     `).join('');
   } catch (error) {
     console.error('Error loading users:', error);
+    usersList.innerHTML = '<div class="error-message">Failed to load users</div>';
   }
 }
 
@@ -543,7 +608,6 @@ async function handleCreateUser(e) {
       alert('User created successfully!');
       document.getElementById('create-user-form').reset();
       loadUsersList();
-      // Switch to users tab
       switchAdminTab('users');
     } else {
       const error = await response.json();
@@ -625,12 +689,17 @@ async function handleScheduleTask(e) {
 
 async function loadScheduledTasks() {
   const container = document.getElementById('scheduled-tasks-list');
-  if (!container) return;
+  if (!container || !token) return;
   
   try {
     const response = await apiCall('/api/tasks');
     const tasks = await response.json();
     const scheduledTasks = tasks.filter(t => t.type === 'scheduled');
+    
+    if (scheduledTasks.length === 0) {
+      container.innerHTML = '<div class="task-item">No scheduled tasks</div>';
+      return;
+    }
     
     container.innerHTML = scheduledTasks.map(task => `
       <div class="task-item">
@@ -639,11 +708,12 @@ async function loadScheduledTasks() {
           <div class="task-description">${task.description || ''}</div>
           <div class="task-date">📅 ${task.date || 'No date'}</div>
         </div>
-        <button class="btn-small" onclick="deleteTask('${task.id}')">Delete</button>
+        <button class="btn-small" onclick="window.deleteTask('${task.id}')">Delete</button>
       </div>
     `).join('');
   } catch (error) {
     console.error('Error loading scheduled tasks:', error);
+    container.innerHTML = '<div class="error-message">Failed to load tasks</div>';
   }
 }
 
@@ -667,57 +737,66 @@ window.deleteTask = async function(taskId) {
 };
 
 async function loadAnalytics() {
+  if (!token) return;
+  
   try {
     const response = await apiCall('/api/analytics');
     const data = await response.json();
     
-    // Update stats
-    document.getElementById('overall-percentage').textContent = `${Math.round(data.overall.completionRate)}%`;
-    document.getElementById('total-members').textContent = data.overall.totalUsers;
-    
-    // Calculate streak count (users with >7 day streak)
-    const streakCount = data.userProgress.filter(u => u.streak >= 7).length;
-    document.getElementById('streak-count').textContent = streakCount;
-    
-    // Update user progress list
-    const userProgressList = document.getElementById('user-progress-list');
-    userProgressList.innerHTML = data.userProgress.map(user => `
-      <div class="progress-item">
-        <div class="progress-header">
-          <span>${user.fullName || user.username}</span>
-          <span>${Math.round(user.percentage)}%</span>
-        </div>
-        <div class="progress-bar">
-          <div class="progress-fill" style="width: ${user.percentage}%"></div>
-        </div>
-        ${user.streak > 0 ? `<div class="streak-badge">🔥 ${user.streak} day streak</div>` : ''}
-      </div>
-    `).join('');
-    
-    // Create chart
-    const ctx = document.getElementById('trends-chart').getContext('2d');
-    new Chart(ctx, {
-      type: 'bar',
-      data: {
-        labels: data.userProgress.map(u => u.username),
-        datasets: [{
-          label: 'Completion Rate (%)',
-          data: data.userProgress.map(u => u.percentage),
-          backgroundColor: 'rgba(201, 160, 61, 0.6)',
-          borderColor: '#C9A03D',
-          borderWidth: 1
-        }]
-      },
-      options: {
-        responsive: true,
-        scales: {
-          y: {
-            beginAtZero: true,
-            max: 100
-          }
-        }
+    if (data && data.overall) {
+      document.getElementById('overall-percentage').textContent = `${Math.round(data.overall.completionRate)}%`;
+      document.getElementById('total-members').textContent = data.overall.totalUsers || 0;
+      
+      const streakCount = data.userProgress ? data.userProgress.filter(u => u.streak >= 7).length : 0;
+      document.getElementById('streak-count').textContent = streakCount;
+      
+      const userProgressList = document.getElementById('user-progress-list');
+      if (userProgressList && data.userProgress) {
+        userProgressList.innerHTML = data.userProgress.map(user => `
+          <div class="progress-item">
+            <div class="progress-header">
+              <span>${user.fullName || user.username}</span>
+              <span>${Math.round(user.percentage)}%</span>
+            </div>
+            <div class="progress-bar">
+              <div class="progress-fill" style="width: ${user.percentage}%"></div>
+            </div>
+            ${user.streak > 0 ? `<div class="streak-badge">🔥 ${user.streak} day streak</div>` : ''}
+          </div>
+        `).join('');
       }
-    });
+      
+      // Create chart
+      const ctx = document.getElementById('trends-chart');
+      if (ctx && data.userProgress) {
+        const existingChart = Chart.getChart(ctx);
+        if (existingChart) existingChart.destroy();
+        
+        new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels: data.userProgress.map(u => u.username),
+            datasets: [{
+              label: 'Completion Rate (%)',
+              data: data.userProgress.map(u => u.percentage),
+              backgroundColor: 'rgba(201, 160, 61, 0.6)',
+              borderColor: '#C9A03D',
+              borderWidth: 1
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            scales: {
+              y: {
+                beginAtZero: true,
+                max: 100
+              }
+            }
+          }
+        });
+      }
+    }
   } catch (error) {
     console.error('Error loading analytics:', error);
   }
@@ -725,21 +804,27 @@ async function loadAnalytics() {
 
 async function loadAuditLogs() {
   const container = document.getElementById('audit-logs-container');
-  if (!container) return;
+  if (!container || !token) return;
   
   try {
     const response = await apiCall('/api/audit');
     const data = await response.json();
     
+    if (!data.logs || data.logs.length === 0) {
+      container.innerHTML = '<div class="audit-entry">No audit logs available</div>';
+      return;
+    }
+    
     container.innerHTML = data.logs.map(log => `
       <div class="audit-entry">
         <i class="fas fa-history audit-icon"></i>
         <strong>${new Date(log.timestamp).toLocaleString()}</strong><br>
-        User ${log.userId} performed: ${log.action} on ${log.target || 'unknown'}
+        ${log.username || 'User'} performed: ${log.action} on ${log.target || 'unknown'}
       </div>
     `).join('');
   } catch (error) {
     console.error('Error loading audit logs:', error);
+    container.innerHTML = '<div class="error-message">Failed to load audit logs</div>';
   }
 }
 
@@ -756,8 +841,7 @@ async function exportData(format) {
       a.download = `family-tracker-export-${new Date().toISOString().split('T')[0]}.json`;
       a.click();
       URL.revokeObjectURL(url);
-    } else if (format === 'csv') {
-      // Convert to CSV
+    } else if (format === 'csv' && data.userProgress) {
       const headers = ['Username', 'Full Name', 'Completion Rate (%)', 'Streak'];
       const rows = data.userProgress.map(u => [
         u.username,
