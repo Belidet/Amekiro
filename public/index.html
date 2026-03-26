@@ -13,6 +13,8 @@
   <link rel="stylesheet" href="/styles.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
+  
+  <!-- Debug Panel Styles -->
   <style>
     /* Password toggle styles */
     .password-container {
@@ -47,9 +49,169 @@
     .toggle-password:focus {
       outline: none;
     }
+    
+    /* Debug Console Styles */
+    #debug-console {
+      position: fixed;
+      bottom: 10px;
+      right: 10px;
+      width: 350px;
+      max-height: 300px;
+      background: rgba(0, 0, 0, 0.9);
+      color: #0f0;
+      font-family: monospace;
+      font-size: 11px;
+      border-radius: 8px;
+      z-index: 9999;
+      display: none;
+      flex-direction: column;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+      border: 1px solid #C9A03D;
+    }
+    
+    #debug-console.show {
+      display: flex;
+    }
+    
+    .debug-header {
+      background: #C9A03D;
+      color: #800020;
+      padding: 8px 12px;
+      font-weight: bold;
+      cursor: pointer;
+      border-radius: 8px 8px 0 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .debug-header h4 {
+      margin: 0;
+      font-size: 12px;
+    }
+    
+    .debug-header button {
+      background: none;
+      border: none;
+      color: #800020;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: bold;
+      margin-left: 8px;
+    }
+    
+    .debug-content {
+      padding: 8px;
+      overflow-y: auto;
+      max-height: 250px;
+      font-size: 10px;
+    }
+    
+    .debug-log {
+      border-bottom: 1px solid #333;
+      padding: 4px 0;
+      margin-bottom: 4px;
+      word-break: break-all;
+    }
+    
+    .debug-error {
+      color: #ff6b6b;
+    }
+    
+    .debug-success {
+      color: #6bff6b;
+    }
+    
+    .debug-info {
+      color: #6bb5ff;
+    }
+    
+    .debug-toggle {
+      position: fixed;
+      bottom: 10px;
+      right: 10px;
+      background: #C9A03D;
+      color: #800020;
+      border: none;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      cursor: pointer;
+      z-index: 9998;
+      font-size: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .debug-toggle:hover {
+      transform: scale(1.05);
+    }
+    
+    /* Loading indicator */
+    .global-loading {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      z-index: 10000;
+      display: none;
+      justify-content: center;
+      align-items: center;
+    }
+    
+    .global-loading.show {
+      display: flex;
+    }
+    
+    .loading-spinner {
+      background: white;
+      padding: 20px;
+      border-radius: 15px;
+      text-align: center;
+    }
+    
+    .loading-spinner i {
+      font-size: 40px;
+      color: #C9A03D;
+      animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
   </style>
 </head>
 <body>
+  <!-- Debug Console -->
+  <button class="debug-toggle" id="debug-toggle" title="Debug Console">🐛</button>
+  <div id="debug-console">
+    <div class="debug-header">
+      <h4>🐛 Debug Console</h4>
+      <div>
+        <button id="clear-debug">Clear</button>
+        <button id="close-debug">✕</button>
+      </div>
+    </div>
+    <div class="debug-content" id="debug-content">
+      <div class="debug-log debug-info">✓ Debug console ready</div>
+      <div class="debug-log debug-info">📱 App version: 1.0.0</div>
+      <div class="debug-log debug-info">🌐 URL: <span id="debug-url"></span></div>
+    </div>
+  </div>
+  
+  <!-- Global Loading Indicator -->
+  <div id="global-loading" class="global-loading">
+    <div class="loading-spinner">
+      <i class="fas fa-cross fa-spin"></i>
+      <p>Loading...</p>
+    </div>
+  </div>
+
   <div id="app">
     <!-- Login Section -->
     <div id="login-section" class="section sacred-container">
@@ -72,20 +234,21 @@
         <form id="login-form">
           <div class="form-group">
             <label><i class="fas fa-user"></i> የተጠቃሚ ስም</label>
-            <input type="text" id="login-username" required placeholder="Username">
+            <input type="text" id="login-username" required placeholder="Username" autocomplete="username">
           </div>
           <div class="form-group">
             <label><i class="fas fa-lock"></i> የይለፍ ቃል</label>
             <div class="password-container">
-              <input type="password" id="login-password" required placeholder="Password">
+              <input type="password" id="login-password" required placeholder="Password" autocomplete="current-password">
               <button type="button" class="toggle-password" data-target="login-password" aria-label="Show/hide password">
                 <i class="fas fa-eye"></i>
               </button>
             </div>
           </div>
-          <button type="submit" class="btn-gold">ግባ <i class="fas fa-arrow-right"></i></button>
+          <button type="submit" class="btn-gold" id="login-submit">ግባ <i class="fas fa-arrow-right"></i></button>
         </form>
         <div id="login-error" class="error-message"></div>
+        <div id="login-status" style="font-size: 12px; margin-top: 10px; color: #666;"></div>
       </div>
       
       <div class="candle-stand">
@@ -310,6 +473,164 @@
     </div>
   </div>
 
+  <!-- Debug Console Script -->
+  <script>
+    // Debug console utility
+    const DebugConsole = {
+      logs: [],
+      maxLogs: 50,
+      initialized: false,
+      
+      init() {
+        if (this.initialized) return;
+        this.initialized = true;
+        
+        document.getElementById('debug-url').textContent = window.location.href;
+        
+        // Setup debug toggle
+        document.getElementById('debug-toggle').addEventListener('click', () => {
+          document.getElementById('debug-console').classList.toggle('show');
+        });
+        
+        document.getElementById('close-debug').addEventListener('click', () => {
+          document.getElementById('debug-console').classList.remove('show');
+        });
+        
+        document.getElementById('clear-debug').addEventListener('click', () => {
+          this.clear();
+        });
+        
+        // Override console methods
+        const originalLog = console.log;
+        const originalError = console.error;
+        const originalWarn = console.warn;
+        
+        console.log = (...args) => {
+          this.addLog(args.join(' '), 'info');
+          originalLog.apply(console, args);
+        };
+        
+        console.error = (...args) => {
+          this.addLog(args.join(' '), 'error');
+          originalError.apply(console, args);
+        };
+        
+        console.warn = (...args) => {
+          this.addLog(args.join(' '), 'warn');
+          originalWarn.apply(console, args);
+        };
+        
+        // Catch global errors
+        window.onerror = (msg, url, line, col, error) => {
+          this.addLog(`${msg} at ${url}:${line}`, 'error');
+          return false;
+        };
+        
+        // Catch unhandled promise rejections
+        window.addEventListener('unhandledrejection', (event) => {
+          this.addLog(`Unhandled Promise Rejection: ${event.reason}`, 'error');
+        });
+        
+        this.addLog('Debug console initialized', 'success');
+        this.addLog(`Browser: ${navigator.userAgent.substring(0, 100)}`, 'info');
+      },
+      
+      addLog(message, type = 'info') {
+        const logEntry = {
+          message: message,
+          type: type,
+          timestamp: new Date().toLocaleTimeString()
+        };
+        
+        this.logs.unshift(logEntry);
+        if (this.logs.length > this.maxLogs) this.logs.pop();
+        
+        this.updateDisplay();
+      },
+      
+      updateDisplay() {
+        const container = document.getElementById('debug-content');
+        if (!container) return;
+        
+        container.innerHTML = this.logs.map(log => {
+          let className = 'debug-log';
+          if (log.type === 'error') className += ' debug-error';
+          else if (log.type === 'success') className += ' debug-success';
+          else if (log.type === 'warn') className += ' debug-warn';
+          else className += ' debug-info';
+          
+          return `<div class="${className}">[${log.timestamp}] ${escapeHtml(log.message)}</div>`;
+        }).join('');
+        
+        // Auto-scroll to top
+        container.scrollTop = 0;
+      },
+      
+      clear() {
+        this.logs = [];
+        this.updateDisplay();
+        this.addLog('Console cleared', 'info');
+      }
+    };
+    
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+    
+    // Initialize debug console
+    DebugConsole.init();
+    
+    // Add loading indicator functions
+    window.showLoading = () => {
+      document.getElementById('global-loading').classList.add('show');
+    };
+    
+    window.hideLoading = () => {
+      document.getElementById('global-loading').classList.remove('show');
+    };
+    
+    // Add status message function
+    window.showStatus = (message, isError = false) => {
+      const statusDiv = document.getElementById('login-status');
+      if (statusDiv) {
+        statusDiv.textContent = message;
+        statusDiv.style.color = isError ? '#C41E3A' : '#2E5A2E';
+        setTimeout(() => {
+          if (statusDiv.textContent === message) {
+            statusDiv.textContent = '';
+          }
+        }, 5000);
+      }
+      DebugConsole.addLog(message, isError ? 'error' : 'success');
+    };
+    
+    // Check if server is reachable on load
+    async function checkServerHealth() {
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000);
+        
+        const response = await fetch('/api/health', { signal: controller.signal });
+        clearTimeout(timeoutId);
+        
+        if (response.ok) {
+          DebugConsole.addLog('✅ Server is healthy', 'success');
+          window.showStatus('✅ Server connected', false);
+        } else {
+          DebugConsole.addLog('⚠️ Server responded but with error', 'warn');
+        }
+      } catch (error) {
+        DebugConsole.addLog(`❌ Server unreachable: ${error.message}`, 'error');
+        window.showStatus('⚠️ Server connection issue. Check if backend is running.', true);
+      }
+    }
+    
+    // Run health check after page loads
+    setTimeout(checkServerHealth, 1000);
+  </script>
+  
   <script src="/script.js"></script>
 </body>
 </html>
