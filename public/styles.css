@@ -216,7 +216,7 @@ input:focus, select:focus, textarea:focus {
   box-shadow: 0 0 0 3px rgba(201, 160, 61, 0.2);
 }
 
-/* Password Container - NEW */
+/* Password Container Styles */
 .password-container {
   position: relative;
   width: 100%;
@@ -227,7 +227,7 @@ input:focus, select:focus, textarea:focus {
   padding-right: 45px;
 }
 
-/* Toggle Password Button - NEW */
+/* Toggle Password Button */
 .toggle-password {
   position: absolute;
   right: 12px;
@@ -265,7 +265,7 @@ input:focus, select:focus, textarea:focus {
   pointer-events: none;
 }
 
-/* Active state for toggle button - NEW */
+/* Active state for toggle button */
 .toggle-password.active {
   color: var(--gold-dark);
 }
@@ -399,6 +399,13 @@ input:focus, select:focus, textarea:focus {
 .task-description {
   font-size: 0.85rem;
   color: #666;
+  margin-top: 0.25rem;
+}
+
+.task-date {
+  font-size: 0.75rem;
+  color: var(--gold-dark);
+  margin-top: 0.25rem;
 }
 
 .task-icon {
@@ -557,6 +564,7 @@ input:focus, select:focus, textarea:focus {
 .streak-badge {
   font-size: 0.75rem;
   color: var(--liturgical-green);
+  margin-top: 0.5rem;
 }
 
 /* Stats Summary */
@@ -587,6 +595,14 @@ input:focus, select:focus, textarea:focus {
   margin-top: 0.25rem;
 }
 
+/* Stats Grid for Dashboard */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
 /* Users List */
 .users-list {
   display: flex;
@@ -612,6 +628,13 @@ input:focus, select:focus, textarea:focus {
 .user-name {
   font-weight: 600;
   font-family: 'Cormorant Garamond', serif;
+  font-size: 1rem;
+}
+
+.user-username {
+  font-size: 0.75rem;
+  color: #666;
+  margin-top: 0.25rem;
 }
 
 .user-role {
@@ -620,6 +643,7 @@ input:focus, select:focus, textarea:focus {
   border-radius: 20px;
   background: var(--gold-light);
   display: inline-block;
+  margin-top: 0.25rem;
 }
 
 .user-role.root { background: var(--royal-blue); color: white; }
@@ -638,6 +662,12 @@ input:focus, select:focus, textarea:focus {
   padding: 0.3rem;
   border-radius: 50%;
   transition: all 0.3s ease;
+  width: 32px;
+  height: 32px;
+}
+
+.action-btn:hover {
+  transform: scale(1.1);
 }
 
 .action-btn.reset { color: var(--gold-primary); }
@@ -657,6 +687,19 @@ input:focus, select:focus, textarea:focus {
 
 .audit-icon {
   margin-right: 0.5rem;
+  color: var(--gold-primary);
+}
+
+/* Date Selector */
+.date-selector {
+  margin-bottom: 1rem;
+}
+
+.date-input {
+  padding: 0.5rem;
+  border: 1px solid var(--gold-dark);
+  border-radius: 10px;
+  font-size: 1rem;
 }
 
 /* Responsive Design */
@@ -695,7 +738,7 @@ input:focus, select:focus, textarea:focus {
     align-self: flex-end;
   }
   
-  /* Password toggle mobile adjustments - NEW */
+  /* Password toggle mobile adjustments */
   .toggle-password {
     right: 10px;
     width: 28px;
@@ -708,6 +751,10 @@ input:focus, select:focus, textarea:focus {
   
   .password-container input {
     padding-right: 40px;
+  }
+  
+  .stats-grid {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -732,11 +779,28 @@ input:focus, select:focus, textarea:focus {
     padding: 0.5rem;
   }
   
-  /* Password toggle mobile adjustments - NEW */
+  /* Password toggle mobile adjustments */
   .toggle-password {
     right: 8px;
     width: 32px;
     height: 32px;
+  }
+  
+  .task-item {
+    flex-wrap: wrap;
+  }
+  
+  .task-checkbox {
+    order: 1;
+  }
+  
+  .task-icon {
+    order: 2;
+  }
+  
+  .task-content {
+    order: 3;
+    width: calc(100% - 70px);
   }
 }
 
@@ -801,11 +865,48 @@ input:focus, select:focus, textarea:focus {
   border-radius: 30px;
   cursor: pointer;
   transition: all 0.3s ease;
+  font-family: 'Inter', sans-serif;
+}
+
+.admin-tab:hover {
+  background: rgba(201, 160, 61, 0.1);
 }
 
 .admin-tab.active {
   background: var(--gold-primary);
   color: var(--burgundy);
+}
+
+/* Export Section */
+.export-section {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1.5rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+/* Header Content */
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  padding: 0.5rem;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 0.3rem 0.8rem;
+  border-radius: 30px;
+}
+
+.church-silhouette {
+  font-size: 2rem;
 }
 
 /* Hidden Elements */
@@ -818,6 +919,7 @@ input:focus, select:focus, textarea:focus {
   color: var(--liturgical-red);
   margin-top: 1rem;
   font-size: 0.85rem;
+  text-align: center;
 }
 
 /* Loading Spinner */
@@ -827,8 +929,73 @@ input:focus, select:focus, textarea:focus {
   color: var(--gold-primary);
 }
 
-/* Accessibility - Focus Visible for Password Toggle - NEW */
+.loading::after {
+  content: '✠';
+  display: inline-block;
+  animation: spin 1s linear infinite;
+  margin-left: 0.5rem;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Accessibility - Focus Visible for Password Toggle */
 .toggle-password:focus-visible {
   outline: 2px solid var(--gold-primary);
   outline-offset: 2px;
+}
+
+/* Animation for success messages */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.success-message {
+  animation: fadeIn 0.3s ease;
+  background: var(--liturgical-green);
+  color: white;
+  padding: 0.5rem;
+  border-radius: 8px;
+  text-align: center;
+  margin-top: 1rem;
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--deep-blue);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--gold-primary);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--gold-dark);
+}
+
+/* Print Styles */
+@media print {
+  .sacred-nav,
+  .btn-icon,
+  .candle-stand {
+    display: none;
+  }
+  
+  .arched-panel {
+    break-inside: avoid;
+    box-shadow: none;
+  }
+  
+  body {
+    background: white;
+  }
 }
