@@ -47,12 +47,6 @@
     .toggle-password:focus {
       outline: none;
     }
-    
-    /* Adjust form group spacing */
-    .form-group {
-      margin-bottom: 1.5rem;
-      position: relative;
-    }
   </style>
 </head>
 <body>
@@ -161,7 +155,7 @@
         </div>
       </div>
 
-      <!-- Calendar View (Admin only for scheduling) -->
+      <!-- Calendar View -->
       <div id="calendar-view" class="view-container" style="display: none;">
         <div class="arched-panel">
           <h2><i class="fas fa-calendar-plus"></i> ሥራዎችን መርሐግብር ማስያዝ</h2>
@@ -282,7 +276,7 @@
         </div>
       </div>
 
-      <!-- Analytics View (Root Admin only) -->
+      <!-- Analytics View -->
       <div id="analytics-view" class="view-container root-only" style="display: none;">
         <div class="arched-panel">
           <h2><i class="fas fa-chart-simple"></i> የቤተሰብ መንፈሳዊ እድገት</h2>
@@ -316,37 +310,6 @@
     </div>
   </div>
 
-  <script>
-    // Password toggle functionality
-    document.addEventListener('DOMContentLoaded', function() {
-      const toggleButtons = document.querySelectorAll('.toggle-password');
-      
-      toggleButtons.forEach(button => {
-        button.addEventListener('click', function() {
-          const targetId = this.getAttribute('data-target');
-          const passwordInput = document.getElementById(targetId);
-          const icon = this.querySelector('i');
-          
-          if (passwordInput) {
-            // Toggle the type attribute
-            const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
-            passwordInput.setAttribute('type', type);
-            
-            // Toggle the icon
-            if (icon) {
-              if (type === 'text') {
-                icon.classList.remove('fa-eye');
-                icon.classList.add('fa-eye-slash');
-              } else {
-                icon.classList.remove('fa-eye-slash');
-                icon.classList.add('fa-eye');
-              }
-            }
-          }
-        });
-      });
-    });
-  </script>
   <script src="/script.js"></script>
 </body>
 </html>
