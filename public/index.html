@@ -14,7 +14,7 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
   
-  <!-- Debug Panel Styles -->
+  <!-- Debug Console Styles -->
   <style>
     /* Password toggle styles */
     .password-container {
@@ -55,18 +55,19 @@
       position: fixed;
       bottom: 10px;
       right: 10px;
-      width: 350px;
-      max-height: 300px;
-      background: rgba(0, 0, 0, 0.9);
+      width: 380px;
+      max-height: 350px;
+      background: rgba(0, 0, 0, 0.95);
       color: #0f0;
-      font-family: monospace;
+      font-family: 'Courier New', monospace;
       font-size: 11px;
       border-radius: 8px;
       z-index: 9999;
       display: none;
       flex-direction: column;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+      box-shadow: 0 4px 15px rgba(0,0,0,0.5);
       border: 1px solid #C9A03D;
+      backdrop-filter: blur(5px);
     }
     
     #debug-console.show {
@@ -74,7 +75,7 @@
     }
     
     .debug-header {
-      background: #C9A03D;
+      background: linear-gradient(135deg, #C9A03D 0%, #B8860B 100%);
       color: #800020;
       padding: 8px 12px;
       font-weight: bold;
@@ -83,28 +84,39 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
+      font-family: 'Inter', sans-serif;
     }
     
     .debug-header h4 {
       margin: 0;
       font-size: 12px;
+      font-weight: bold;
     }
     
     .debug-header button {
-      background: none;
+      background: rgba(128, 0, 32, 0.8);
       border: none;
-      color: #800020;
+      color: #C9A03D;
       cursor: pointer;
-      font-size: 14px;
+      font-size: 11px;
       font-weight: bold;
       margin-left: 8px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      transition: all 0.2s ease;
+    }
+    
+    .debug-header button:hover {
+      background: #800020;
+      color: #F0E68C;
     }
     
     .debug-content {
       padding: 8px;
       overflow-y: auto;
-      max-height: 250px;
+      max-height: 280px;
       font-size: 10px;
+      line-height: 1.4;
     }
     
     .debug-log {
@@ -112,55 +124,71 @@
       padding: 4px 0;
       margin-bottom: 4px;
       word-break: break-all;
+      font-family: monospace;
     }
     
     .debug-error {
       color: #ff6b6b;
+      border-left: 3px solid #ff6b6b;
+      padding-left: 6px;
     }
     
     .debug-success {
       color: #6bff6b;
+      border-left: 3px solid #6bff6b;
+      padding-left: 6px;
+    }
+    
+    .debug-warn {
+      color: #ffb86b;
+      border-left: 3px solid #ffb86b;
+      padding-left: 6px;
     }
     
     .debug-info {
       color: #6bb5ff;
+      border-left: 3px solid #6bb5ff;
+      padding-left: 6px;
     }
     
     .debug-toggle {
       position: fixed;
       bottom: 10px;
       right: 10px;
-      background: #C9A03D;
+      background: linear-gradient(135deg, #C9A03D 0%, #B8860B 100%);
       color: #800020;
       border: none;
       border-radius: 50%;
-      width: 40px;
-      height: 40px;
+      width: 44px;
+      height: 44px;
       cursor: pointer;
       z-index: 9998;
-      font-size: 20px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      font-size: 22px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.3);
       display: flex;
       align-items: center;
       justify-content: center;
+      transition: all 0.3s ease;
     }
     
     .debug-toggle:hover {
-      transform: scale(1.05);
+      transform: scale(1.1);
+      box-shadow: 0 4px 15px rgba(201, 160, 61, 0.4);
     }
     
-    /* Loading indicator */
+    /* Global Loading Indicator */
     .global-loading {
       position: fixed;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
-      background: rgba(0,0,0,0.5);
+      background: rgba(0,0,0,0.7);
       z-index: 10000;
       display: none;
       justify-content: center;
       align-items: center;
+      backdrop-filter: blur(3px);
     }
     
     .global-loading.show {
@@ -168,46 +196,93 @@
     }
     
     .loading-spinner {
-      background: white;
-      padding: 20px;
-      border-radius: 15px;
+      background: linear-gradient(135deg, #FFF5E6 0%, #FDF5E6 100%);
+      padding: 25px 35px;
+      border-radius: 20px;
       text-align: center;
+      border: 2px solid #C9A03D;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
     }
     
     .loading-spinner i {
-      font-size: 40px;
+      font-size: 48px;
       color: #C9A03D;
       animation: spin 1s linear infinite;
+    }
+    
+    .loading-spinner p {
+      margin-top: 12px;
+      color: #800020;
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 16px;
+      font-weight: bold;
     }
     
     @keyframes spin {
       from { transform: rotate(0deg); }
       to { transform: rotate(360deg); }
     }
+    
+    /* Connection Badge */
+    .connection-badge {
+      position: fixed;
+      bottom: 65px;
+      right: 10px;
+      background: rgba(0, 0, 0, 0.85);
+      color: #C9A03D;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 10px;
+      font-family: monospace;
+      z-index: 9997;
+      backdrop-filter: blur(4px);
+      border: 1px solid #C9A03D;
+      pointer-events: none;
+    }
+    
+    /* Status message animations */
+    @keyframes fadeInOut {
+      0% { opacity: 0; transform: translateY(-10px); }
+      10% { opacity: 1; transform: translateY(0); }
+      90% { opacity: 1; transform: translateY(0); }
+      100% { opacity: 0; transform: translateY(-10px); }
+    }
+    
+    .status-message {
+      animation: fadeInOut 3s ease forwards;
+    }
   </style>
 </head>
 <body>
+  <!-- Debug Console Button -->
+  <button class="debug-toggle" id="debug-toggle" title="Debug Console (Click to open)">
+    🐛
+  </button>
+  
   <!-- Debug Console -->
-  <button class="debug-toggle" id="debug-toggle" title="Debug Console">🐛</button>
   <div id="debug-console">
     <div class="debug-header">
-      <h4>🐛 Debug Console</h4>
+      <h4>🐛 Debug Console - Family Tracker</h4>
       <div>
-        <button id="clear-debug">Clear</button>
-        <button id="close-debug">✕</button>
+        <button id="clear-debug" title="Clear console">Clear</button>
+        <button id="close-debug" title="Close console">✕</button>
       </div>
     </div>
     <div class="debug-content" id="debug-content">
-      <div class="debug-log debug-info">✓ Debug console ready</div>
-      <div class="debug-log debug-info">📱 App version: 1.0.0</div>
+      <div class="debug-log debug-info">✓ Debug console initialized</div>
+      <div class="debug-log debug-info">📱 App version: 2.0.0</div>
       <div class="debug-log debug-info">🌐 URL: <span id="debug-url"></span></div>
+      <div class="debug-log debug-info">🕐 Time: <span id="debug-time"></span></div>
     </div>
   </div>
+  
+  <!-- Connection Quality Badge -->
+  <div id="connection-badge" class="connection-badge">📡 Checking connection...</div>
   
   <!-- Global Loading Indicator -->
   <div id="global-loading" class="global-loading">
     <div class="loading-spinner">
-      <i class="fas fa-cross fa-spin"></i>
+      <i class="fas fa-cross"></i>
       <p>Loading...</p>
     </div>
   </div>
@@ -231,6 +306,9 @@
           <i class="fas fa-cross"></i>
         </div>
         <h2>መግቢያ</h2>
+        <div id="first-user-message" style="background: rgba(201, 160, 61, 0.2); padding: 8px; border-radius: 8px; margin-bottom: 15px; font-size: 12px; text-align: center; color: #C9A03D;">
+          ✨ First user to register becomes the administrator ✨
+        </div>
         <form id="login-form">
           <div class="form-group">
             <label><i class="fas fa-user"></i> የተጠቃሚ ስም</label>
@@ -245,10 +323,10 @@
               </button>
             </div>
           </div>
-          <button type="submit" class="btn-gold" id="login-submit">ግባ <i class="fas fa-arrow-right"></i></button>
+          <button type="submit" class="btn-gold" id="login-submit">ግባ / ይመዝገቡ <i class="fas fa-arrow-right"></i></button>
         </form>
         <div id="login-error" class="error-message"></div>
-        <div id="login-status" style="font-size: 12px; margin-top: 10px; color: #666;"></div>
+        <div id="login-status" style="font-size: 12px; margin-top: 12px; text-align: center; color: #C9A03D;"></div>
       </div>
       
       <div class="candle-stand">
@@ -326,26 +404,22 @@
         </div>
         
         <div class="arched-panel admin-only" id="schedule-task-panel">
-          <h3><i class="fas fa-plus-circle"></i> አዲስ ሥራ ማስያዝ</h3>
+          <h3><i class="fas fa-plus-circle"></i> አዲስ ሥራ መፍጠር</h3>
           <form id="schedule-task-form">
             <div class="form-group">
-              <label>የሥራ ርዕስ</label>
+              <label>የሥራ ርዕስ (አማርኛ)</label>
               <input type="text" id="task-title" required placeholder="ለምሳሌ: የጉባኤ አቴንዳንስ">
             </div>
             <div class="form-group">
               <label>መግለጫ</label>
               <textarea id="task-description" rows="2" placeholder="የሥራው ዝርዝር መግለጫ"></textarea>
             </div>
-            <div class="form-group">
-              <label>ቀን</label>
-              <input type="date" id="task-date" required>
-            </div>
             <button type="submit" class="btn-gold"><i class="fas fa-save"></i> ማስቀመጥ</button>
           </form>
         </div>
         
         <div class="arched-panel">
-          <h3><i class="fas fa-list"></i> የታቀዱ ሥራዎች</h3>
+          <h3><i class="fas fa-list"></i> የተመደቡ ሥራዎች</h3>
           <div id="scheduled-tasks-list" class="tasks-list"></div>
         </div>
       </div>
@@ -415,16 +489,6 @@
                 <label><i class="fas fa-user-circle"></i> ሙሉ ስም</label>
                 <input type="text" id="root-fullname">
               </div>
-              <div class="form-group">
-                <label><i class="fas fa-medal"></i> ማዕረግ/ርዕስ</label>
-                <select id="root-badge">
-                  <option value="Priest">ቄስ (Priest)</option>
-                  <option value="Elder">ሽማግሌ (Elder)</option>
-                  <option value="Deacon">ዲያቆን (Deacon)</option>
-                  <option value="Spiritual Father">መንፈሳዊ አባት</option>
-                  <option value="Founder">መሥራች (Founder)</option>
-                </select>
-              </div>
               <div class="warning-box">
                 <i class="fas fa-exclamation-triangle"></i> ማስጠንቀቂያ: አዲሱ ሥር አስተዳዳሪ ሙሉ የስርዓት ተደራሽነት ይኖረዋል
               </div>
@@ -478,27 +542,40 @@
     // Debug console utility
     const DebugConsole = {
       logs: [],
-      maxLogs: 50,
+      maxLogs: 100,
       initialized: false,
       
       init() {
         if (this.initialized) return;
         this.initialized = true;
         
+        // Set current time and URL
         document.getElementById('debug-url').textContent = window.location.href;
+        document.getElementById('debug-time').textContent = new Date().toLocaleString();
         
         // Setup debug toggle
-        document.getElementById('debug-toggle').addEventListener('click', () => {
-          document.getElementById('debug-console').classList.toggle('show');
-        });
+        const debugToggle = document.getElementById('debug-toggle');
+        const debugConsole = document.getElementById('debug-console');
+        const closeDebug = document.getElementById('close-debug');
+        const clearDebug = document.getElementById('clear-debug');
         
-        document.getElementById('close-debug').addEventListener('click', () => {
-          document.getElementById('debug-console').classList.remove('show');
-        });
+        if (debugToggle) {
+          debugToggle.addEventListener('click', () => {
+            debugConsole.classList.toggle('show');
+          });
+        }
         
-        document.getElementById('clear-debug').addEventListener('click', () => {
-          this.clear();
-        });
+        if (closeDebug) {
+          closeDebug.addEventListener('click', () => {
+            debugConsole.classList.remove('show');
+          });
+        }
+        
+        if (clearDebug) {
+          clearDebug.addEventListener('click', () => {
+            this.clear();
+          });
+        }
         
         // Override console methods
         const originalLog = console.log;
@@ -531,8 +608,9 @@
           this.addLog(`Unhandled Promise Rejection: ${event.reason}`, 'error');
         });
         
-        this.addLog('Debug console initialized', 'success');
-        this.addLog(`Browser: ${navigator.userAgent.substring(0, 100)}`, 'info');
+        this.addLog('✅ Debug console initialized', 'success');
+        this.addLog(`🌍 Browser: ${navigator.userAgent.split(' ').slice(0, 3).join(' ')}`, 'info');
+        this.addLog(`📡 Connection: ${navigator.onLine ? 'Online' : 'Offline'}`, 'info');
       },
       
       addLog(message, type = 'info') {
@@ -584,11 +662,13 @@
     
     // Add loading indicator functions
     window.showLoading = () => {
-      document.getElementById('global-loading').classList.add('show');
+      const loader = document.getElementById('global-loading');
+      if (loader) loader.classList.add('show');
     };
     
     window.hideLoading = () => {
-      document.getElementById('global-loading').classList.remove('show');
+      const loader = document.getElementById('global-loading');
+      if (loader) loader.classList.remove('show');
     };
     
     // Add status message function
@@ -597,38 +677,109 @@
       if (statusDiv) {
         statusDiv.textContent = message;
         statusDiv.style.color = isError ? '#C41E3A' : '#2E5A2E';
+        statusDiv.classList.add('status-message');
         setTimeout(() => {
           if (statusDiv.textContent === message) {
             statusDiv.textContent = '';
+            statusDiv.classList.remove('status-message');
           }
-        }, 5000);
+        }, 3000);
       }
       DebugConsole.addLog(message, isError ? 'error' : 'success');
     };
     
-    // Check if server is reachable on load
-    async function checkServerHealth() {
-      try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 5000);
+    // Connection quality monitoring
+    function updateConnectionBadge() {
+      const badge = document.getElementById('connection-badge');
+      if (!badge) return;
+      
+      const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+      if (connection) {
+        const type = connection.effectiveType;
+        const rtt = connection.rtt;
         
-        const response = await fetch('/api/health', { signal: controller.signal });
-        clearTimeout(timeoutId);
+        let icon = '📶';
+        if (type === '4g') icon = '📶 4G';
+        else if (type === '3g') icon = '📶 3G 🐌';
+        else if (type === '2g') icon = '📶 2G 🐢';
+        else icon = `📶 ${type}`;
         
-        if (response.ok) {
-          DebugConsole.addLog('✅ Server is healthy', 'success');
-          window.showStatus('✅ Server connected', false);
-        } else {
-          DebugConsole.addLog('⚠️ Server responded but with error', 'warn');
-        }
-      } catch (error) {
-        DebugConsole.addLog(`❌ Server unreachable: ${error.message}`, 'error');
-        window.showStatus('⚠️ Server connection issue. Check if backend is running.', true);
+        badge.innerHTML = `${icon} (${rtt}ms)`;
+        badge.style.backgroundColor = rtt > 500 ? 'rgba(196, 30, 58, 0.9)' : 'rgba(0,0,0,0.85)';
+        badge.style.borderColor = rtt > 500 ? '#C41E3A' : '#C9A03D';
+        
+        DebugConsole.addLog(`Connection: ${type}, RTT: ${rtt}ms`, rtt > 500 ? 'warn' : 'info');
+      } else {
+        badge.innerHTML = '📡 Connection unknown';
       }
     }
     
+    // Check server health
+    async function checkServerHealth() {
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000);
+        const startTime = Date.now();
+        
+        const response = await fetch('/api/inspiration', { signal: controller.signal });
+        const latency = Date.now() - startTime;
+        clearTimeout(timeoutId);
+        
+        if (response.ok) {
+          DebugConsole.addLog(`✅ Server healthy - Latency: ${latency}ms`, 'success');
+          showStatus(`✅ Connected (${latency}ms)`, false);
+          
+          const badge = document.getElementById('connection-badge');
+          if (badge) {
+            badge.innerHTML = `✅ ${latency}ms`;
+            badge.style.backgroundColor = latency > 1000 ? 'rgba(196, 30, 58, 0.9)' : 'rgba(0,0,0,0.85)';
+          }
+        } else {
+          DebugConsole.addLog('⚠️ Server responded with error', 'warn');
+          showStatus('⚠️ Server issue, but app may still work', true);
+        }
+      } catch (error) {
+        DebugConsole.addLog(`❌ Server unreachable: ${error.message}`, 'error');
+        showStatus('⚠️ Server connection slow - please wait', true);
+        
+        const badge = document.getElementById('connection-badge');
+        if (badge) {
+          badge.innerHTML = '⚠️ Slow connection';
+          badge.style.backgroundColor = 'rgba(196, 30, 58, 0.9)';
+        }
+      }
+    }
+    
+    // Monitor connection changes
+    if ('connection' in navigator) {
+      updateConnectionBadge();
+      navigator.connection.addEventListener('change', updateConnectionBadge);
+    }
+    
     // Run health check after page loads
-    setTimeout(checkServerHealth, 1000);
+    setTimeout(checkServerHealth, 2000);
+    
+    // Update time every minute
+    setInterval(() => {
+      const timeSpan = document.getElementById('debug-time');
+      if (timeSpan) timeSpan.textContent = new Date().toLocaleString();
+    }, 60000);
+    
+    // Log page load
+    DebugConsole.addLog('📄 Page loaded', 'success');
+    DebugConsole.addLog(`📱 Viewport: ${window.innerWidth}x${window.innerHeight}`, 'info');
+    
+    // Handle online/offline events
+    window.addEventListener('online', () => {
+      DebugConsole.addLog('🌐 Connection restored', 'success');
+      showStatus('Connection restored!', false);
+      checkServerHealth();
+    });
+    
+    window.addEventListener('offline', () => {
+      DebugConsole.addLog('🌐 Connection lost', 'error');
+      showStatus('⚠️ You are offline', true);
+    });
   </script>
   
   <script src="/script.js"></script>
