@@ -1,12 +1,21 @@
 // Family Reminder Tracker - Main Application
 let currentUser = null;
 let token = null;
+let authChecked = false;
+
+// DOM Elements
+const loginSection = document.getElementById('login-section');
+const mainApp = document.getElementById('main-app');
+const loginForm = document.getElementById('login-form');
+const logoutBtn = document.getElementById('logout-btn');
+const userDisplay = document.getElementById('user-name-display');
+const userRoleBadge = document.getElementById('user-role-badge');
 
 // API Configuration
 const API_BASE_URL = '';
 
-// Helper function for API calls with timeout
-async function apiCall(endpoint, options = {}) {
+// Helper function for API calls with timeout and retry
+async function apiCall(endpoint, options = {}, retries = 2) {
   const url = `${API_BASE_URL}${endpoint}`;
   const headers = {
     'Content-Type': 'application/json',
@@ -17,88 +26,112 @@ async function apiCall(endpoint, options = {}) {
     headers['Authorization'] = `Bearer ${token}`;
   }
   
-  // Add timeout to prevent hanging (30 seconds for Africa)
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 30000);
-  
-  try {
-    const response = await fetch(url, {
-      ...options,
-      headers,
-      signal: controller.signal
-    });
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
     
-    clearTimeout(timeoutId);
-    
-    if (response.status === 401 || response.status === 403) {
-      if (currentUser) {
-        logout();
+    try {
+      const response = await fetch(url, {
+        ...options,
+        headers,
+        signal: controller.signal
+      });
+      
+      clearTimeout(timeoutId);
+      
+      if (response.status === 401 || response.status === 403) {
+        if (currentUser) {
+          logout();
+        }
+        throw new Error('Authentication failed');
       }
-      throw new Error('Authentication failed');
+      
+      return response;
+    } catch (error) {
+      clearTimeout(timeoutId);
+      
+      if (error.name === 'AbortError') {
+        console.warn(`API call timeout (attempt ${attempt + 1}):`, endpoint);
+        if (attempt === retries) {
+          throw new Error('Request timeout - server may be slow');
+        }
+        // Wait before retry
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        continue;
+      }
+      
+      if (attempt === retries) throw error;
+      await new Promise(resolve => setTimeout(resolve, 500));
     }
-    
-    return response;
-  } catch (error) {
-    clearTimeout(timeoutId);
-    if (error.name === 'AbortError') {
-      console.error('API call timeout:', endpoint);
-      throw new Error('Request timeout - please check your connection');
-    }
-    console.error('API call failed:', error);
-    throw error;
   }
 }
 
-// DOM Elements
-const loginSection = document.getElementById('login-section');
-const mainApp = document.getElementById('main-app');
-const loginForm = document.getElementById('login-form');
-const logoutBtn = document.getElementById('logout-btn');
-const userDisplay = document.getElementById('user-name-display');
-const userRoleBadge = document.getElementById('user-role-badge');
+// DOM Elements check
+function checkElementsExist() {
+  const required = ['login-section', 'main-app', 'login-form'];
+  const missing = required.filter(id => !document.getElementById(id));
+  if (missing.length) {
+    console.error('Missing required elements:', missing);
+    return false;
+  }
+  return true;
+}
 
-// Check authentication on load with immediate display
-document.addEventListener('DOMContentLoaded', () => {
+// Initialize app
+document.addEventListener('DOMContentLoaded', async () => {
   console.log('App starting...');
   
-  // Show login form immediately to prevent blank screen
-  if (loginSection) loginSection.style.display = 'block';
-  if (mainApp) mainApp.style.display = 'none';
+  // Check if all elements exist
+  if (!checkElementsExist()) {
+    console.error('Critical elements missing!');
+    return;
+  }
   
-  // Setup password toggles immediately
+  // Show login section immediately
+  loginSection.style.display = 'block';
+  mainApp.style.display = 'none';
+  
+  // Setup password toggles
   setupPasswordToggles();
   
   // Setup event listeners
   setupEventListeners();
   setupCandle();
   
-  // Check auth in background (won't block UI)
-  setTimeout(() => {
-    checkAuth();
-  }, 100);
-  
-  // Show welcome message for first-time users
-  showWelcomeMessage();
-});
-
-function showWelcomeMessage() {
+  // Add a status message
   const statusDiv = document.getElementById('login-status');
   if (statusDiv) {
-    statusDiv.innerHTML = '✨ First user will become administrator ✨';
+    statusDiv.innerHTML = '🔄 Connecting to server...';
     statusDiv.style.color = '#C9A03D';
-    setTimeout(() => {
-      if (statusDiv.innerHTML === '✨ First user will become administrator ✨') {
-        statusDiv.innerHTML = '';
-      }
-    }, 5000);
   }
-}
+  
+  // Check authentication with timeout (don't block UI)
+  setTimeout(async () => {
+    try {
+      await checkAuth();
+    } catch (error) {
+      console.error('Auth check error:', error);
+      if (statusDiv) {
+        statusDiv.innerHTML = '⚠️ Server connection slow - you can still login';
+        statusDiv.style.color = '#C9A03D';
+        setTimeout(() => {
+          if (statusDiv.innerHTML.includes('slow')) {
+            statusDiv.innerHTML = '';
+          }
+        }, 5000);
+      }
+    } finally {
+      authChecked = true;
+    }
+  }, 100);
+});
 
 // Setup password toggle functionality
 function setupPasswordToggles() {
   const toggleButtons = document.querySelectorAll('.toggle-password');
   
   toggleButtons.forEach(button => {
+    // Remove existing listeners to avoid duplicates
     const newButton = button.cloneNode(true);
     button.parentNode.replaceChild(newButton, button);
     
@@ -125,6 +158,7 @@ function setupPasswordToggles() {
           }
         }
         
+        // Visual feedback
         this.style.transform = 'translateY(-50%) scale(0.95)';
         setTimeout(() => {
           this.style.transform = 'translateY(-50%) scale(1)';
@@ -140,22 +174,32 @@ async function checkAuth() {
   const storedToken = localStorage.getItem('token');
   const storedUser = localStorage.getItem('user');
   
-  if (storedToken && storedUser) {
-    token = storedToken;
-    currentUser = JSON.parse(storedUser);
+  if (!storedToken || !storedUser) {
+    console.log('No stored auth, showing login');
+    return;
+  }
+  
+  token = storedToken;
+  currentUser = JSON.parse(storedUser);
+  
+  try {
+    console.log('Verifying auth with server...');
+    const response = await apiCall('/api/auth/me');
     
-    try {
-      const response = await apiCall('/api/auth/me');
-      
-      if (response.ok) {
-        const user = await response.json();
-        currentUser = user;
-        showMainApp();
-      } else {
-        logout();
-      }
-    } catch (error) {
-      console.error('Auth check failed:', error);
+    if (response.ok) {
+      const user = await response.json();
+      currentUser = user;
+      showMainApp();
+      console.log('Auth verified, showing main app');
+    } else {
+      console.log('Auth invalid, logging out');
+      logout();
+    }
+  } catch (error) {
+    console.error('Auth check failed:', error);
+    // Don't logout on network error - keep showing login
+    // but clear potentially invalid token
+    if (error.message.includes('401') || error.message.includes('403')) {
       logout();
     }
   }
@@ -248,19 +292,25 @@ async function handleLogin(e) {
   const submitButton = loginForm.querySelector('button[type="submit"]');
   const statusDiv = document.getElementById('login-status');
   
+  if (!username || !password) {
+    errorDiv.textContent = 'Please enter username and password';
+    return;
+  }
+  
   errorDiv.textContent = '';
   
   // Disable button and show loading
   submitButton.disabled = true;
   const originalButtonText = submitButton.innerHTML;
-  submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> በመግባት ላይ...';
+  submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Connecting...';
   
   if (statusDiv) {
-    statusDiv.innerHTML = '🔄 Connecting to server...';
+    statusDiv.innerHTML = '🔄 Logging in...';
     statusDiv.style.color = '#C9A03D';
   }
   
   try {
+    console.log('Attempting login for:', username);
     const response = await apiCall('/api/auth/login', {
       method: 'POST',
       body: JSON.stringify({ username, password })
@@ -275,10 +325,9 @@ async function handleLogin(e) {
       localStorage.setItem('user', JSON.stringify(currentUser));
       
       if (statusDiv) {
-        statusDiv.innerHTML = currentUser.role === 'root_admin' ? 
-          '👑 Welcome, Administrator!' : '✅ Login successful!';
+        const roleText = currentUser.role === 'root_admin' ? '👑 Welcome, Administrator!' : '✅ Login successful!';
+        statusDiv.innerHTML = roleText;
         statusDiv.style.color = '#2E5A2E';
-        setTimeout(() => { statusDiv.innerHTML = ''; }, 3000);
       }
       
       showMainApp();
@@ -291,14 +340,21 @@ async function handleLogin(e) {
     }
   } catch (error) {
     console.error('Login error:', error);
-    errorDiv.textContent = 'Connection error. Please try again.';
+    errorDiv.textContent = 'Connection error: ' + (error.message || 'Please try again');
     if (statusDiv) {
-      statusDiv.innerHTML = '⚠️ Server connection issue. Retrying...';
+      statusDiv.innerHTML = '⚠️ Connection error - please retry';
       statusDiv.style.color = '#C41E3A';
     }
   } finally {
     submitButton.disabled = false;
     submitButton.innerHTML = originalButtonText;
+    
+    // Clear status after delay
+    setTimeout(() => {
+      if (statusDiv && statusDiv.innerHTML.includes('error')) {
+        statusDiv.innerHTML = '';
+      }
+    }, 3000);
   }
 }
 
@@ -307,8 +363,20 @@ function logout() {
   localStorage.removeItem('user');
   token = null;
   currentUser = null;
-  if (loginSection) loginSection.style.display = 'block';
-  if (mainApp) mainApp.style.display = 'none';
+  loginSection.style.display = 'block';
+  mainApp.style.display = 'none';
+  
+  // Clear any loading states
+  const statusDiv = document.getElementById('login-status');
+  if (statusDiv) {
+    statusDiv.innerHTML = '👋 Logged out';
+    statusDiv.style.color = '#2E5A2E';
+    setTimeout(() => {
+      if (statusDiv.innerHTML === '👋 Logged out') {
+        statusDiv.innerHTML = '';
+      }
+    }, 2000);
+  }
   
   // Reset password fields
   const passwordInputs = document.querySelectorAll('#login-password, #new-password, #root-password');
@@ -326,18 +394,11 @@ function logout() {
       icon.classList.add('fa-eye');
     }
   });
-  
-  const statusDiv = document.getElementById('login-status');
-  if (statusDiv) {
-    statusDiv.innerHTML = '👋 Logged out successfully';
-    statusDiv.style.color = '#2E5A2E';
-    setTimeout(() => { statusDiv.innerHTML = ''; }, 3000);
-  }
 }
 
 function showMainApp() {
-  if (loginSection) loginSection.style.display = 'none';
-  if (mainApp) mainApp.style.display = 'block';
+  loginSection.style.display = 'none';
+  mainApp.style.display = 'block';
   
   if (currentUser) {
     if (userDisplay) userDisplay.textContent = currentUser.fullName || currentUser.username;
@@ -373,7 +434,7 @@ function showMainApp() {
     setupPasswordToggles();
   }, 100);
   
-  // Load initial data
+  // Load initial data (non-blocking)
   loadDashboard();
   loadTodayTasks();
   loadDailyInspiration();
@@ -567,12 +628,6 @@ async function loadDailyInspiration() {
     
     inspirationText.textContent = data.text || "እግዚአብሔር ፍቅር ነው።";
     inspirationSource.textContent = data.source || "1 ዮሐንስ 4:8";
-    
-    inspirationText.style.opacity = '0';
-    setTimeout(() => {
-      inspirationText.style.transition = 'opacity 0.5s';
-      inspirationText.style.opacity = '1';
-    }, 10);
   } catch (error) {
     console.error('Error loading inspiration:', error);
     inspirationText.textContent = "እግዚአብሔር ፍቅር ነው።";
@@ -596,9 +651,9 @@ async function loadUsersList() {
     usersList.innerHTML = users.map(user => `
       <div class="user-card">
         <div class="user-info">
-          <div class="user-name">${user.fullName || user.username}</div>
+          <div class="user-name">${escapeHtml(user.fullName || user.username)}</div>
           <div class="user-role ${user.role}">${user.role === 'root_admin' ? 'ሥር አስተዳዳሪ' : user.role === 'admin' ? 'አስተዳዳሪ' : 'ተጠቃሚ'}</div>
-          <div class="user-username">@${user.username}</div>
+          <div class="user-username">@${escapeHtml(user.username)}</div>
         </div>
         <div class="user-actions">
           ${user.id !== currentUser?.id ? `<button class="action-btn delete" onclick="window.deleteUser('${user.id}')"><i class="fas fa-trash"></i></button>` : ''}
@@ -609,6 +664,13 @@ async function loadUsersList() {
     console.error('Error loading users:', error);
     usersList.innerHTML = '<div class="error-message">Failed to load users</div>';
   }
+}
+
+function escapeHtml(text) {
+  if (!text) return '';
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
 }
 
 window.deleteUser = async function(userId) {
@@ -746,7 +808,7 @@ async function loadAnalytics() {
         userProgressList.innerHTML = data.userProgress.map(user => `
           <div class="progress-item">
             <div class="progress-header">
-              <span>${user.fullName || user.username}</span>
+              <span>${escapeHtml(user.fullName || user.username)}</span>
               <span>${Math.round(user.percentage)}%</span>
             </div>
             <div class="progress-bar">
@@ -810,7 +872,7 @@ async function loadAuditLogs() {
       <div class="audit-entry">
         <i class="fas fa-history audit-icon"></i>
         <strong>${new Date(log.timestamp).toLocaleString()}</strong><br>
-        ${log.username || 'User'} performed: ${log.action} on ${log.target || 'unknown'}
+        ${escapeHtml(log.username || 'User')} performed: ${escapeHtml(log.action)} on ${escapeHtml(log.target || 'unknown')}
       </div>
     `).join('');
   } catch (error) {
@@ -842,7 +904,7 @@ async function exportData(format) {
       ]);
       
       const csvContent = [headers, ...rows]
-        .map(row => row.join(','))
+        .map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
         .join('\n');
       
       const blob = new Blob([csvContent], { type: 'text/csv' });
