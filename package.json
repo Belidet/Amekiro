@@ -1,12 +1,10 @@
 {
-  "name": "family-reminder-tracker",
+  "name": "family-members-tracker",
   "version": "2.0.0",
-  "description": "የአመክሮ ቤተሰብ መከታተያ - Spiritual task tracking for families",
+  "description": "የአመክሮ ቤተሰብ አባላት መከታተያ - Spiritual task tracking for families",
   "main": "index.js",
   "scripts": {
-    "vercel-build": "echo 'Building for Vercel'",
-    "start": "node server.js",
-    "dev": "nodemon server.js"
+    "vercel-build": "echo 'Building for Vercel'"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
@@ -14,9 +12,6 @@
     "jsonwebtoken": "^9.0.0",
     "lowdb": "^1.0.0",
     "uuid": "^9.0.0"
-  },
-  "devDependencies": {
-    "nodemon": "^2.0.22"
   },
   "engines": {
     "node": "20.x"
