@@ -1,0 +1,16 @@
+{
+  "name": "የአመክሮ ቤተሰብ አባላት መከታተያ",
+  "short_name": "Family Tracker",
+  "description": "Spiritual task tracking for Orthodox families",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#800020",
+  "theme_color": "#800020",
+  "icons": [
+    {
+      "src": "/icons/cross.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}
