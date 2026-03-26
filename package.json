@@ -1,6 +1,6 @@
 {
   "name": "family-reminder-tracker",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "የአመክሮ ቤተሰብ መከታተያ - Spiritual task tracking for families",
   "main": "index.js",
   "scripts": {
@@ -14,6 +14,6 @@
     "uuid": "^9.0.0"
   },
   "engines": {
-    "node": ">=18.x"
+    "node": "20.x"
   }
 }
