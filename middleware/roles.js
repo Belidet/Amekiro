@@ -4,14 +4,10 @@ const requireRole = (...roles) => {
       return res.status(401).json({ error: 'Unauthorized' });
     }
     if (!roles.includes(req.user.role)) {
-      return res.status(403).json({ error: 'Insufficient permissions. Required role: ' + roles.join(' or ') });
+      return res.status(403).json({ error: 'Insufficient permissions' });
     }
     next();
   };
 };
 
-const requireRootAdmin = requireRole('root_admin');
-const requireAdmin = requireRole('root_admin', 'admin');
-const requireAnyUser = requireRole('root_admin', 'admin', 'standard');
-
-module.exports = { requireRole, requireRootAdmin, requireAdmin, requireAnyUser };
+module.exports = { requireRole };
