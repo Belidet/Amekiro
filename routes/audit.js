@@ -1,35 +1,17 @@
-const express = require('express');
-const router = express.Router();
-
-module.exports = (db, authenticateToken, requireRole) => {
-  // Get audit logs (root admin only)
+module.exports = function(db, authenticateToken, requireRole) {
+  const router = require('express').Router();
+  
   router.get('/', authenticateToken, requireRole('root_admin'), (req, res) => {
-    const { limit = 100, offset = 0 } = req.query;
+    const { limit = 50, offset = 0 } = req.query;
     
-    let logs = db.get('auditLogs')
+    const logs = db.get('auditLogs')
       .orderBy(['timestamp'], ['desc'])
+      .slice(parseInt(offset), parseInt(offset) + parseInt(limit))
       .value();
     
-    const total = logs.length;
-    logs = logs.slice(parseInt(offset), parseInt(offset) + parseInt(limit));
-    
-    // Enrich logs with user info
-    const enrichedLogs = logs.map(log => {
-      const performer = db.get('users').find({ id: log.performedByUserId }).value();
-      const target = log.targetUserId ? db.get('users').find({ id: log.targetUserId }).value() : null;
-      
-      return {
-        ...log,
-        performerUsername: performer?.username || 'System',
-        targetUsername: target?.username || null
-      };
-    });
-    
     res.json({
-      logs: enrichedLogs,
-      total,
-      limit: parseInt(limit),
-      offset: parseInt(offset)
+      logs,
+      total: db.get('auditLogs').value().length
     });
   });
   
