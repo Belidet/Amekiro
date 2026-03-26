@@ -290,6 +290,12 @@ input:focus, select:focus, textarea:focus {
   box-shadow: var(--shadow-gold);
 }
 
+.btn-gold:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
 .btn-small {
   background: transparent;
   border: 1px solid var(--gold-primary);
@@ -702,123 +708,36 @@ input:focus, select:focus, textarea:focus {
   font-size: 1rem;
 }
 
-/* Responsive Design */
-@media (max-width: 768px) {
-  .sacred-nav {
-    gap: 0.25rem;
-  }
-  
-  .nav-btn {
-    padding: 0.4rem 0.8rem;
-    font-size: 0.75rem;
-  }
-  
-  .nav-btn i {
-    font-size: 0.8rem;
-  }
-  
-  .app-title {
-    font-size: 1.5rem;
-  }
-  
-  .arched-panel {
-    padding: 1rem;
-  }
-  
-  .stats-summary {
-    grid-template-columns: repeat(3, 1fr);
-  }
-  
-  .user-card {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-  
-  .user-actions {
-    align-self: flex-end;
-  }
-  
-  /* Password toggle mobile adjustments */
-  .toggle-password {
-    right: 10px;
-    width: 28px;
-    height: 28px;
-  }
-  
-  .toggle-password i {
-    font-size: 1rem;
-  }
-  
-  .password-container input {
-    padding-right: 40px;
-  }
-  
-  .stats-grid {
-    grid-template-columns: 1fr;
-  }
+/* Header Content */
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  padding: 0.5rem;
 }
 
-@media (max-width: 480px) {
-  .stats-summary {
-    gap: 0.5rem;
-  }
-  
-  .stat-value {
-    font-size: 1.2rem;
-  }
-  
-  .nav-btn span {
-    display: none;
-  }
-  
-  .nav-btn i {
-    font-size: 1.2rem;
-  }
-  
-  .nav-btn {
-    padding: 0.5rem;
-  }
-  
-  /* Password toggle mobile adjustments */
-  .toggle-password {
-    right: 8px;
-    width: 32px;
-    height: 32px;
-  }
-  
-  .task-item {
-    flex-wrap: wrap;
-  }
-  
-  .task-checkbox {
-    order: 1;
-  }
-  
-  .task-icon {
-    order: 2;
-  }
-  
-  .task-content {
-    order: 3;
-    width: calc(100% - 70px);
-  }
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 0.3rem 0.8rem;
+  border-radius: 30px;
 }
 
-/* Calendar Styling */
-.sacred-calendar {
-  background: var(--ivory);
-  border-radius: 15px;
-  padding: 1rem;
-  margin-bottom: 1rem;
+.church-silhouette {
+  font-size: 2rem;
 }
 
-.fc {
-  font-family: 'Inter', sans-serif;
-}
-
-.fc-toolbar-title {
-  font-family: 'Cormorant Garamond', serif;
-  color: var(--burgundy);
+/* Export Section */
+.export-section {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1.5rem;
+  justify-content: center;
+  flex-wrap: wrap;
 }
 
 /* Warning Box */
@@ -877,36 +796,21 @@ input:focus, select:focus, textarea:focus {
   color: var(--burgundy);
 }
 
-/* Export Section */
-.export-section {
-  display: flex;
-  gap: 1rem;
-  margin-top: 1.5rem;
-  justify-content: center;
-  flex-wrap: wrap;
+/* Calendar Styling */
+.sacred-calendar {
+  background: var(--ivory);
+  border-radius: 15px;
+  padding: 1rem;
+  margin-bottom: 1rem;
 }
 
-/* Header Content */
-.header-content {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 1rem;
-  padding: 0.5rem;
+.fc {
+  font-family: 'Inter', sans-serif;
 }
 
-.user-info {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  background: rgba(0, 0, 0, 0.3);
-  padding: 0.3rem 0.8rem;
-  border-radius: 30px;
-}
-
-.church-silhouette {
-  font-size: 2rem;
+.fc-toolbar-title {
+  font-family: 'Cormorant Garamond', serif;
+  color: var(--burgundy);
 }
 
 /* Hidden Elements */
@@ -929,38 +833,131 @@ input:focus, select:focus, textarea:focus {
   color: var(--gold-primary);
 }
 
-.loading::after {
-  content: '✠';
-  display: inline-block;
-  animation: spin 1s linear infinite;
-  margin-left: 0.5rem;
+/* Responsive Design */
+@media (max-width: 768px) {
+  .sacred-nav {
+    gap: 0.25rem;
+  }
+  
+  .nav-btn {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.75rem;
+  }
+  
+  .nav-btn i {
+    font-size: 0.8rem;
+  }
+  
+  .app-title {
+    font-size: 1.5rem;
+  }
+  
+  .arched-panel {
+    padding: 1rem;
+  }
+  
+  .stats-summary {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  
+  .user-card {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .user-actions {
+    align-self: flex-end;
+  }
+  
+  .toggle-password {
+    right: 10px;
+    width: 28px;
+    height: 28px;
+  }
+  
+  .toggle-password i {
+    font-size: 1rem;
+  }
+  
+  .password-container input {
+    padding-right: 40px;
+  }
+  
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
-@keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+@media (max-width: 480px) {
+  .stats-summary {
+    gap: 0.5rem;
+  }
+  
+  .stat-value {
+    font-size: 1.2rem;
+  }
+  
+  .nav-btn span {
+    display: none;
+  }
+  
+  .nav-btn i {
+    font-size: 1.2rem;
+  }
+  
+  .nav-btn {
+    padding: 0.5rem;
+  }
+  
+  .toggle-password {
+    right: 8px;
+    width: 32px;
+    height: 32px;
+  }
+  
+  .task-item {
+    flex-wrap: wrap;
+  }
+  
+  .task-checkbox {
+    order: 1;
+  }
+  
+  .task-icon {
+    order: 2;
+  }
+  
+  .task-content {
+    order: 3;
+    width: calc(100% - 70px);
+  }
 }
 
-/* Accessibility - Focus Visible for Password Toggle */
+/* Accessibility */
 .toggle-password:focus-visible {
   outline: 2px solid var(--gold-primary);
   outline-offset: 2px;
 }
 
-/* Animation for success messages */
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(-10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-.success-message {
-  animation: fadeIn 0.3s ease;
-  background: var(--liturgical-green);
-  color: white;
-  padding: 0.5rem;
-  border-radius: 8px;
-  text-align: center;
-  margin-top: 1rem;
+/* Print Styles */
+@media print {
+  .sacred-nav,
+  .btn-icon,
+  .candle-stand,
+  .debug-toggle,
+  #debug-console,
+  .connection-badge {
+    display: none;
+  }
+  
+  .arched-panel {
+    break-inside: avoid;
+    box-shadow: none;
+  }
+  
+  body {
+    background: white;
+  }
 }
 
 /* Scrollbar Styling */
@@ -980,22 +977,4 @@ input:focus, select:focus, textarea:focus {
 
 ::-webkit-scrollbar-thumb:hover {
   background: var(--gold-dark);
-}
-
-/* Print Styles */
-@media print {
-  .sacred-nav,
-  .btn-icon,
-  .candle-stand {
-    display: none;
-  }
-  
-  .arched-panel {
-    break-inside: avoid;
-    box-shadow: none;
-  }
-  
-  body {
-    background: white;
-  }
 }
